@@ -1,0 +1,266 @@
+<template>
+  <div>
+    <SectionHeader
+      title="Find a Service"
+      subtitle="Browse services, compare provider prices, and book the best option for you"
+    />
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <InputField
+          label="Search services or providers"
+          type="text"
+          placeholder="e.g. ironing, Ocean Breeze, dry clean"
+          v-model="searchQuery"
+        />
+        <div>
+          <label class="block text-brand-charcoal mb-3 font-semibold text-sm">
+            Category
+          </label>
+          <select
+            v-model="activeCategory"
+            class="w-full border-2 border-gray-300 bg-brand-white text-brand-charcoal px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue focus:ring-opacity-20 transition-all duration-200"
+          >
+            <option v-for="cat in categories" :key="cat" :value="cat">
+              {{ cat }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <SectionHeader
+      title="Service Catalog"
+      subtitle="Select a service to compare provider prices below"
+    />
+
+    <div v-if="filteredServices.length === 0" class="bg-white rounded-xl border border-gray-200 p-10 text-center mb-10">
+      <div class="text-brand-charcoal font-semibold">No services match your search</div>
+      <div class="text-gray-500 text-sm mt-2">Try a different keyword or category.</div>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <button
+        v-for="srv in filteredServices"
+        :key="srv.id"
+        type="button"
+        class="text-left bg-white rounded-xl border p-5 shadow-sm transition-all relative"
+        :class="
+          selectedServiceId === srv.id
+            ? 'border-brand-blue ring-2 ring-brand-blue/30 shadow-md'
+            : 'border-gray-200 hover:border-brand-blue/50 hover:shadow-md'
+        "
+        @click="selectedServiceId = srv.id"
+      >
+        <span
+          v-if="srv.popular"
+          class="absolute top-3 right-3 text-xs font-semibold bg-brand-orange/10 text-brand-orange px-2 py-0.5 rounded-full"
+        >
+          Popular
+        </span>
+        <div class="text-brand-blue font-bold">{{ srv.title }}</div>
+        <div class="text-xs text-gray-500 mt-0.5">{{ srv.category }}</div>
+        <div class="text-brand-orange font-semibold text-sm mt-2">{{ srv.price }}</div>
+      </button>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <SectionHeader
+        :title="comparisonTitle"
+        :subtitle="comparisonSubtitle"
+      />
+      <div class="flex flex-wrap items-center gap-3 shrink-0">
+        <label class="text-sm font-semibold text-gray-600">Sort by</label>
+        <select
+          v-model="sortBy"
+          class="border-2 border-gray-300 bg-white text-brand-charcoal px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-brand-blue"
+        >
+          <option value="price-asc">Lowest price</option>
+          <option value="price-desc">Highest price</option>
+          <option value="rating-desc">Best rating</option>
+          <option value="turnaround">Fastest turnaround</option>
+        </select>
+      </div>
+    </div>
+
+    <div v-if="comparisonRows.length === 0" class="bg-white rounded-xl border border-gray-200 p-10 text-center">
+      <div class="text-brand-charcoal font-semibold">No providers found for this service</div>
+      <div class="text-gray-500 text-sm mt-2">Select another service or clear your search.</div>
+    </div>
+
+    <template v-else>
+      <div class="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-8">
+        <table class="w-full text-left">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Provider</th>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Rating</th>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Location</th>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Price</th>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Pickup fee</th>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Turnaround</th>
+              <th class="p-4 text-xs font-semibold text-gray-500 uppercase" />
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr
+              v-for="row in comparisonRows"
+              :key="row.provider.id"
+              class="hover:bg-gray-50/80 transition-colors"
+              :class="{ 'bg-brand-blue/5': row.isCheapest }"
+            >
+              <td class="p-4">
+                <div class="font-semibold text-brand-charcoal">{{ row.provider.name }}</div>
+                <span
+                  v-if="row.isCheapest"
+                  class="inline-block mt-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full"
+                >
+                  Best price
+                </span>
+              </td>
+              <td class="p-4">
+                <span class="font-bold text-brand-orange">{{ row.provider.rating }}</span>
+                <span class="text-gray-400 text-xs ml-1">({{ row.provider.reviewCount }})</span>
+              </td>
+              <td class="p-4 text-sm text-gray-600">{{ row.provider.location }}</td>
+              <td class="p-4">
+                <span class="font-bold text-brand-charcoal">KSh {{ row.offer.price }}</span>
+                <span class="text-gray-500 text-xs block">{{ row.offer.unit }}</span>
+              </td>
+              <td class="p-4 text-sm text-gray-600">{{ row.provider.pickupFee }}</td>
+              <td class="p-4 text-sm text-gray-600">{{ row.offer.turnaround }}</td>
+              <td class="p-4">
+                <NuxtLink
+                  :to="row.bookHref"
+                  class="inline-block bg-brand-orange text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-opacity-90"
+                >
+                  Book
+                </NuxtLink>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:hidden">
+        <ProviderCompareCard
+          v-for="row in comparisonRows"
+          :key="row.provider.id"
+          :provider="row.provider"
+          :offer="row.offer"
+          :service-title="selectedService?.title ?? 'Service'"
+          :highlighted="row.isCheapest"
+        />
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+import {
+  HARDCODED_LAUNDRY_SERVICES,
+  SERVICE_CATEGORIES,
+} from "~/data/customerServices";
+import {
+  HARDCODED_LAUNDRY_PROVIDERS,
+  getProvidersForService,
+} from "~/data/customerProviders";
+
+const route = useRoute();
+const categories = SERVICE_CATEGORIES;
+
+const searchQuery = ref(String(route.query.q ?? ""));
+const activeCategory = ref<string>("All");
+const selectedServiceId = ref<string>("wash-fold");
+const sortBy = ref<"price-asc" | "price-desc" | "rating-desc" | "turnaround">("price-asc");
+
+watch(
+  () => route.query.q,
+  (q) => {
+    if (typeof q === "string") searchQuery.value = q;
+  },
+);
+
+const filteredServices = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  return HARDCODED_LAUNDRY_SERVICES.filter((srv) => {
+    const matchesCategory =
+      activeCategory.value === "All" || srv.category === activeCategory.value;
+    const matchesSearch =
+      !q ||
+      srv.title.toLowerCase().includes(q) ||
+      srv.description.toLowerCase().includes(q) ||
+      srv.category.toLowerCase().includes(q) ||
+      HARDCODED_LAUNDRY_PROVIDERS.some(
+        (p) =>
+          p.name.toLowerCase().includes(q) &&
+          p.offers.some((o) => o.serviceId === srv.id),
+      );
+    return matchesCategory && matchesSearch;
+  });
+});
+
+watch(filteredServices, (list) => {
+  if (!list.some((s) => s.id === selectedServiceId.value) && list[0]) {
+    selectedServiceId.value = list[0].id;
+  }
+});
+
+const selectedService = computed(() =>
+  HARDCODED_LAUNDRY_SERVICES.find((s) => s.id === selectedServiceId.value),
+);
+
+const comparisonTitle = computed(() => {
+  const name = selectedService.value?.title ?? "Service";
+  return `Compare providers — ${name}`;
+});
+
+const comparisonSubtitle = computed(() => {
+  const n = comparisonRows.value.length;
+  return `${n} provider${n === 1 ? "" : "s"} offering this service · prices in KSh`;
+});
+
+type ComparisonRow = {
+  provider: (typeof HARDCODED_LAUNDRY_PROVIDERS)[number];
+  offer: (typeof HARDCODED_LAUNDRY_PROVIDERS)[number]["offers"][number];
+  isCheapest: boolean;
+  bookHref: string;
+  priceNum: number;
+};
+
+const comparisonRows = computed<ComparisonRow[]>(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  let rows = getProvidersForService(selectedServiceId.value).map(({ provider, offer }) => ({
+    provider,
+    offer,
+    priceNum: Number.parseInt(offer.price.replace(/,/g, ""), 10) || 0,
+    bookHref: `/order/new?provider=${provider.id}&service=${offer.serviceId}`,
+    isCheapest: false,
+  }));
+
+  if (q) {
+    rows = rows.filter(
+      (r) =>
+        r.provider.name.toLowerCase().includes(q) ||
+        r.provider.location.toLowerCase().includes(q),
+    );
+  }
+
+  const minPrice = rows.length ? Math.min(...rows.map((r) => r.priceNum)) : 0;
+  rows = rows.map((r) => ({ ...r, isCheapest: r.priceNum === minPrice && rows.length > 1 }));
+
+  if (sortBy.value === "price-asc") {
+    rows.sort((a, b) => a.priceNum - b.priceNum);
+  } else if (sortBy.value === "price-desc") {
+    rows.sort((a, b) => b.priceNum - a.priceNum);
+  } else if (sortBy.value === "rating-desc") {
+    rows.sort((a, b) => b.provider.rating - a.provider.rating);
+  } else {
+    rows.sort((a, b) => a.offer.turnaround.localeCompare(b.offer.turnaround));
+  }
+
+  return rows;
+});
+
+definePageMeta({ layout: "dashboard" });
+</script>

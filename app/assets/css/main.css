@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@theme {
+  --color-brand-blue: #0F4C81;
+  --color-brand-orange: #FF6B35;
+  --color-brand-gray: #F4F7F6;
+  --color-brand-white: #FFFFFF;
+  --color-brand-charcoal: #1A1D20;
+}
+
+/* ── Light mode tokens ─────────────────────────────────── */
+:root {
+  --bg-base:      #F4F7F6;
+  --bg-surface:   #FFFFFF;
+  --bg-elevated:  #FFFFFF;
+  --bg-subtle:    #F0F4F8;
+  --text-primary: #1A1D20;
+  --text-muted:   #6B7280;
+  --text-faint:   #9CA3AF;
+  --border-color: #E5E7EB;
+  --border-subtle:#F3F4F6;
+  --brand-blue:   #0F4C81;
+  --brand-blue-light: #E8F0FB;
+  --brand-orange: #FF6B35;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+/* ── Dark mode tokens ──────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-base:      #0D1117;
+  --bg-surface:   #161B22;
+  --bg-elevated:  #1C2431;
+  --bg-subtle:    #21262D;
+  --text-primary: #E6EDF3;
+  --text-muted:   #8B949E;
+  --text-faint:   #6E7681;
+  --border-color: #30363D;
+  --border-subtle:#21262D;
+  --brand-blue:   #58A6FF;
+  --brand-blue-light: #1C2B3A;
+  --brand-orange: #FF8C5A;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* ── Global base ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Semantic utility classes ──────────────────────────── */
+.bg-surface   { background-color: var(--bg-surface); }
+.bg-elevated  { background-color: var(--bg-elevated); }
+.bg-subtle    { background-color: var(--bg-subtle); }
+.text-primary { color: var(--text-primary); }
+.text-muted   { color: var(--text-muted); }
+.text-faint   { color: var(--text-faint); }
+.border-theme { border-color: var(--border-color); }
+.shadow-theme-sm { box-shadow: var(--shadow-sm); }
+.shadow-theme-md { box-shadow: var(--shadow-md); }
+.shadow-theme-lg { box-shadow: var(--shadow-lg); }
+
+/* ── Transitions ───────────────────────────────────────── */
+.transition-theme {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ── Focus rings ───────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+/* ── Mobile sidebar overlay ────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Gradient backgrounds ──────────────────────────────── */
+.hero-gradient {
+  background: linear-gradient(135deg, #0F4C81 0%, #1a6bb5 50%, #0d3d6b 100%);
+}
+
+[data-theme="dark"] .hero-gradient {
+  background: linear-gradient(135deg, #0D1117 0%, #161B22 50%, #0D1117 100%);
+}
+
