@@ -1,17 +1,23 @@
 <template>
-  <div class="bg-gray-50 text-brand-charcoal">
+  <div class="text-brand-charcoal page-bg-container" :style="{
+    backgroundImage: 'url(/hero-bg.jpeg)',
+    backgroundAttachment: 'fixed',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }">
+
     <!-- Hero Section -->
-    <section class="max-w-7xl mx-auto px-6 py-16 lg:py-24">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <section class="relative max-w-7xl mx-auto px-6 py-16 lg:py-24 rounded-3xl overflow-hidden">
+      <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div>
-          <h1 class="text-brand-blue text-5xl lg:text-6xl font-bold leading-tight mb-6">
+          <h1 class="text-5xl lg:text-6xl font-bold leading-tight mb-6 text-on-image" style="color: var(--brand-blue);">
             Laundry Pickup & Delivery
           </h1>
-          <p class="text-gray-600 text-lg leading-relaxed mb-8">
+          <p class="text-lg leading-relaxed mb-8 text-on-image font-medium" style="color: var(--brand-blue);">
             EcoFluffa connects you with trusted local laundry providers. Book a pickup, track progress, and receive clean laundry without the hassle.
           </p>
 
-          <div class="flex justify-center gap-4">
+          <div class="flex flex-wrap gap-4">
             <AppButton
               label="Book a Pickup"
               variant="primary"
@@ -27,65 +33,47 @@
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-brand-blue to-brand-blue bg-opacity-5 rounded-2xl p-8 border border-brand-blue border-opacity-10">
-  <div class="text-white font-bold text-2xl mb-6">   <!-- was text-brand-blue -->
-    What you get with EcoFluffa
-  </div>
-  <ul class="space-y-4">
-    <li class="flex gap-3 items-start">
-      <span class="text-2xl text-white">•</span>
-      <div>
-        <div class="font-semibold text-white">Book in minutes</div>               <!-- was text-brand-charcoal -->
-        <div class="text-sm text-blue-100">Quick, hassle-free booking process</div>  <!-- was text-gray-600 -->
-      </div>
-    </li>
-    <li class="flex gap-3 items-start">
-      <span class="text-2xl text-white">•</span>
-      <div>
-        <div class="font-semibold text-white">Live tracking</div>
-        <div class="text-sm text-blue-100">Real-time status updates</div>
-      </div>
-    </li>
-    <li class="flex gap-3 items-start">
-      <span class="text-2xl text-white">•</span>
-      <div>
-        <div class="font-semibold text-white">Multiple providers</div>
-        <div class="text-sm text-blue-100">Choose from trusted local businesses</div>
-      </div>
-    </li>
-  </ul>
-</div>
+        <div class="glass-card rounded-2xl p-8">
+          <div class="font-bold text-2xl mb-6" style="color: var(--brand-blue);">
+            What you get with EcoFluffa
+          </div>
+          <ul class="space-y-4">
+            <li v-for="item in heroFeatures" :key="item.title" class="flex gap-3 items-start">
+              <span class="text-xl mt-0.5" style="color: var(--brand-blue);">✦</span>
+              <div>
+                <div class="font-semibold" style="color: var(--brand-blue);">{{ item.title }}</div>
+                <div class="text-sm font-medium text-muted">{{ item.desc }}</div>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </section>
 
     <!-- How It Works Section -->
-    <section class="bg-white border-y border-gray-200">
+    <section>
       <div class="max-w-7xl mx-auto px-6 py-16">
         <SectionHeader
           title="How It Works"
           subtitle="Simple steps from pickup to delivery"
         />
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="bg-gray-50 rounded-xl p-8 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-4xl mb-4">1</div>
-            <div class="text-brand-blue font-bold text-xl mb-3">Choose service</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              Select a laundry provider and the service you need.
-            </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12">
+
+          <!-- Skewed / parallelogram image -->
+          <div class="skewed-image-wrap">
+            <img src="/hero-bg.jpeg" alt="How it works process" />
           </div>
-          <div class="bg-gray-50 rounded-xl p-8 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-4xl mb-4">2</div>
-            <div class="text-brand-blue font-bold text-xl mb-3">Confirm pickup</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              Share your pickup address, date, and preferred time.
-            </div>
-          </div>
-          <div class="bg-gray-50 rounded-xl p-8 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-4xl mb-4">3</div>
-            <div class="text-brand-blue font-bold text-xl mb-3">Track delivery</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              Monitor status updates until your laundry is delivered.
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div
+              v-for="step in steps"
+              :key="step.number"
+              class="glass-card rounded-xl p-8 col-span-2 md:col-span-1"
+            >
+              <div class="text-4xl mb-4 font-bold" style="color: var(--brand-blue); opacity: 0.2;">{{ step.number }}</div>
+              <div class="font-bold text-xl mb-3" style="color: var(--brand-blue);">{{ step.title }}</div>
+              <div class="text-muted text-sm leading-relaxed font-medium">{{ step.desc }}</div>
             </div>
           </div>
         </div>
@@ -117,41 +105,28 @@
       </div>
     </section>
 
-    <!-- Why Section -->
-    <section class="bg-white border-t border-gray-200">
+    <!-- Why EcoFluffa Section -->
+    <section>
       <div class="max-w-7xl mx-auto px-6 py-16">
         <SectionHeader
           title="Why EcoFluffa"
           subtitle="Better laundry, less effort"
         />
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-2xl mb-3">○</div>
-            <div class="text-brand-blue font-bold mb-2">Provider variety</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              Compare providers based on services and ratings before you book.
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              v-for="reason in whyReasons"
+              :key="reason.title"
+              class="glass-card rounded-xl p-6"
+            >
+              <div class="font-bold mb-2" style="color: var(--brand-blue);">{{ reason.title }}</div>
+              <div class="text-muted text-sm leading-relaxed font-medium">{{ reason.desc }}</div>
             </div>
           </div>
-          <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-2xl mb-3">◆</div>
-            <div class="text-brand-blue font-bold mb-2">Order visibility</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              See status updates for washing, readiness, and delivery.
-            </div>
-          </div>
-          <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-2xl mb-3"><Icon name="mdi:package-variant" size="28" style="color: var(--brand-blue);" /></div>
-            <div class="text-brand-blue font-bold mb-2">Pickup-first convenience</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              Save time with scheduled pickups instead of driving to drop-off points.
-            </div>
-          </div>
-          <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-            <div class="text-2xl mb-3"><Icon name="mdi:star" size="28" style="color: var(--brand-blue);" /></div>
-            <div class="text-brand-blue font-bold mb-2">Built for everyday cloth</div>
-            <div class="text-gray-600 text-sm leading-relaxed">
-              From daily wash cycles to delicates, providers offer options that fit your needs.
-            </div>
+
+          <!-- Skewed / parallelogram image -->
+          <div class="skewed-image-wrap">
+            <img src="/hero-bg.jpeg" alt="Why EcoFluffa benefits" />
           </div>
         </div>
       </div>
@@ -167,5 +142,90 @@ const goToOrderNew = () => {
   router.push("/order/new");
 };
 
+const heroFeatures = [
+  { title: "Book in minutes", desc: "Quick, hassle-free booking process" },
+  { title: "Live tracking", desc: "Real-time status updates" },
+  { title: "Multiple providers", desc: "Choose from trusted local businesses" },
+];
+
+const steps = [
+  { number: "1", title: "Choose service", desc: "Select a laundry provider and the service you need." },
+  { number: "2", title: "Confirm pickup", desc: "Share your pickup address, date, and preferred time." },
+  { number: "3", title: "Track delivery", desc: "Monitor status updates until your laundry is delivered." },
+];
+
+const whyReasons = [
+  { title: "Provider variety", desc: "Compare providers based on services and ratings before you book." },
+  { title: "Order visibility", desc: "See status updates for washing, readiness, and delivery." },
+  { title: "Pickup-first convenience", desc: "Save time with scheduled pickups instead of driving to drop-off points." },
+  { title: "Built for everyday cloth", desc: "From daily wash cycles to delicates, providers offer options that fit your needs." },
+];
+
 definePageMeta({ layout: "default" });
 </script>
+
+<style scoped>
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 4px 24px rgba(15, 76, 129, 0.08);
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 8px 32px rgba(15, 76, 129, 0.14);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] .glass-card {
+  background: rgba(15, 76, 129, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .glass-card:hover {
+  background: rgba(15, 76, 129, 0.28);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Parallelogram / skewed image shape matching the sketch */
+.skewed-image-wrap {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  border-radius: 1rem;
+
+  /* skew the container to create the pillow/parallelogram shape */
+  clip-path: polygon(
+    8% 0%,    /* top-left: slightly indented */
+    100% 0%,  /* top-right: full width */
+    92% 100%, /* bottom-right: slightly indented */
+    0% 100%   /* bottom-left: full width */
+  );
+
+  transition: box-shadow 0.3s ease;
+}
+
+.skewed-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.skewed-image-wrap:hover img {
+  transform: scale(1.06);
+}
+
+.skewed-image-wrap:hover {
+  box-shadow: 0 12px 40px rgba(15, 76, 129, 0.18);
+}
+
+[data-theme="dark"] .skewed-image-wrap:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+</style>

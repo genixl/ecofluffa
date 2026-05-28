@@ -2,49 +2,54 @@
   <div>
     <SectionHeader title="Providers" subtitle="Approve or remove provider accounts" />
 
-    <table class="w-full border border-brand-gray border-collapse">
-      <thead>
-        <tr class="bg-brand-gray">
-          <th class="border border-brand-gray p-3 text-left text-brand-blue">Provider</th>
-          <th class="border border-brand-gray p-3 text-left">Location</th>
-          <th class="border border-brand-gray p-3 text-left">Rating</th>
-          <th class="border border-brand-gray p-3 text-left">Status</th>
-          <th class="border border-brand-gray p-3 text-left">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in providers" :key="p.name" class="bg-brand-white">
-          <td class="border border-brand-gray p-3 font-semibold text-brand-charcoal">
-            {{ p.name }}
-          </td>
-          <td class="border border-brand-gray p-3 text-brand-charcoal">
-            {{ p.location }}
-          </td>
-          <td class="border border-brand-gray p-3 text-brand-charcoal">
-            {{ p.rating }} / 5
-          </td>
-          <td class="border border-brand-gray p-3 text-brand-charcoal">
-            {{ p.status }}
-          </td>
-          <td class="border border-brand-gray p-3">
-            <div class="flex flex-wrap gap-3">
-              <AppButton
-                label="Approve"
-                variant="outline"
-                type="button"
-                @click="approve(p.name)"
-              />
-              <AppButton
-                label="Remove"
-                variant="outline"
-                type="button"
-                @click="remove(p.name)"
-              />
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
+      <table class="w-full text-left">
+        <thead class="bg-subtle border-b border-theme">
+          <tr>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Provider</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Location</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Rating</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Status</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border-theme">
+          <tr v-for="p in providers" :key="p.name" class="hover:bg-subtle transition-colors">
+            <td class="p-4 font-semibold text-primary">{{ p.name }}</td>
+            <td class="p-4 text-sm text-muted">{{ p.location }}</td>
+            <td class="p-4 text-sm text-primary">{{ p.rating }} / 5</td>
+            <td class="p-4 text-sm">
+              <span
+                class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                :class="{
+                  'bg-green-100 text-green-700': p.status === 'Approved',
+                  'bg-brand-orange/10 text-brand-orange': p.status === 'Pending',
+                  'bg-red-100 text-red-600': p.status === 'Removed',
+                }"
+              >
+                {{ p.status }}
+              </span>
+            </td>
+            <td class="p-4">
+              <div class="flex flex-wrap gap-3">
+                <AppButton
+                  label="Approve"
+                  variant="outline"
+                  type="button"
+                  @click="approve(p.name)"
+                />
+                <AppButton
+                  label="Remove"
+                  variant="outline"
+                  type="button"
+                  @click="remove(p.name)"
+                />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -74,4 +79,3 @@ const remove = (name: string) => {
 
 definePageMeta({ layout: "dashboard" });
 </script>
-

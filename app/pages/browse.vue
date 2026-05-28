@@ -1,9 +1,9 @@
 <template>
-  <div class="bg-gray-50 text-brand-charcoal min-h-screen pt-6">
+  <div class="browse-page min-h-screen pt-6">
     <div class="max-w-7xl mx-auto px-6 py-10">
       <div class="mb-12">
-        <h1 class="text-4xl font-bold text-brand-blue mb-2">Browse Providers</h1>
-        <p class="text-gray-600">Find the perfect laundry service for your needs</p>
+        <h1 class="text-4xl font-bold mb-2" style="color: var(--brand-blue);">Browse Providers</h1>
+        <p class="text-muted">Find the perfect laundry service for your needs</p>
       </div>
 
       <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-10">
@@ -15,7 +15,7 @@
             v-model="query"
           />
         </div>
-        <div class="text-gray-600 text-sm bg-white rounded-lg px-4 py-3 border border-gray-200">
+        <div class="results-badge text-sm">
           Showing {{ providers.length }} provider results
         </div>
       </div>
@@ -86,3 +86,19 @@ const providers = ref<Provider[]>([
 definePageMeta({ layout: "default" });
 </script>
 
+<style scoped>
+.browse-page {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.results-badge {
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+</style>

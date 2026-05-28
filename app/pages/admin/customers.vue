@@ -2,32 +2,26 @@
   <div>
     <SectionHeader title="Customers" subtitle="All customer accounts on EcoFluffa" />
 
-    <table class="w-full border border-brand-gray border-collapse">
-      <thead>
-        <tr class="bg-brand-gray">
-          <th class="border border-brand-gray p-3 text-left text-brand-blue">Name</th>
-          <th class="border border-brand-gray p-3 text-left">Email</th>
-          <th class="border border-brand-gray p-3 text-left">Phone</th>
-          <th class="border border-brand-gray p-3 text-left">Member Since</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="c in customers" :key="c.email" class="bg-brand-white">
-          <td class="border border-brand-gray p-3 font-semibold text-brand-charcoal">
-            {{ c.name }}
-          </td>
-          <td class="border border-brand-gray p-3 text-brand-charcoal">
-            {{ c.email }}
-          </td>
-          <td class="border border-brand-gray p-3 text-brand-charcoal">
-            {{ c.phone }}
-          </td>
-          <td class="border border-brand-gray p-3 text-brand-charcoal">
-            {{ c.since }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
+      <table class="w-full text-left">
+        <thead class="bg-subtle border-b border-theme">
+          <tr>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Name</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Email</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Phone</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Member Since</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border-theme">
+          <tr v-for="c in customers" :key="c.email" class="hover:bg-subtle transition-colors">
+            <td class="p-4 font-semibold text-primary">{{ c.name }}</td>
+            <td class="p-4 text-sm text-muted">{{ c.email }}</td>
+            <td class="p-4 text-sm text-muted">{{ c.phone }}</td>
+            <td class="p-4 text-sm text-muted">{{ c.since }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -48,4 +42,3 @@ const customers = ref<CustomerRow[]>([
 
 definePageMeta({ layout: "dashboard" });
 </script>
-

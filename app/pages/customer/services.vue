@@ -5,7 +5,7 @@
       subtitle="Browse services, compare provider prices, and book the best option for you"
     />
 
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm">
+    <div class="bg-surface border border-theme rounded-xl p-6 mb-8 shadow-theme-sm">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <InputField
           label="Search services or providers"
@@ -14,12 +14,12 @@
           v-model="searchQuery"
         />
         <div>
-          <label class="block text-brand-charcoal mb-3 font-semibold text-sm">
+          <label class="block text-muted mb-3 font-semibold text-sm">
             Category
           </label>
           <select
             v-model="activeCategory"
-            class="w-full border-2 border-gray-300 bg-brand-white text-brand-charcoal px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue focus:ring-opacity-20 transition-all duration-200"
+            class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all duration-200"
           >
             <option v-for="cat in categories" :key="cat" :value="cat">
               {{ cat }}
@@ -34,9 +34,9 @@
       subtitle="Select a service to compare provider prices below"
     />
 
-    <div v-if="filteredServices.length === 0" class="bg-white rounded-xl border border-gray-200 p-10 text-center mb-10">
-      <div class="text-brand-charcoal font-semibold">No services match your search</div>
-      <div class="text-gray-500 text-sm mt-2">Try a different keyword or category.</div>
+    <div v-if="filteredServices.length === 0" class="bg-surface border border-theme rounded-xl p-10 text-center mb-10">
+      <div class="text-primary font-semibold">No services match your search</div>
+      <div class="text-muted text-sm mt-2">Try a different keyword or category.</div>
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -44,11 +44,11 @@
         v-for="srv in filteredServices"
         :key="srv.id"
         type="button"
-        class="text-left bg-white rounded-xl border p-5 shadow-sm transition-all relative"
+        class="text-left bg-surface rounded-xl border p-5 shadow-theme-sm transition-all relative"
         :class="
           selectedServiceId === srv.id
-            ? 'border-brand-blue ring-2 ring-brand-blue/30 shadow-md'
-            : 'border-gray-200 hover:border-brand-blue/50 hover:shadow-md'
+            ? 'border-brand-blue-700 ring-2 ring-brand-blue-700/30 shadow-theme-md'
+            : 'border-theme hover:border-brand-blue-700/50 hover:shadow-theme-md'
         "
         @click="selectedServiceId = srv.id"
       >
@@ -58,8 +58,8 @@
         >
           Popular
         </span>
-        <div class="text-brand-blue font-bold">{{ srv.title }}</div>
-        <div class="text-xs text-gray-500 mt-0.5">{{ srv.category }}</div>
+        <div class="text-brand-blue-700 font-bold">{{ srv.title }}</div>
+        <div class="text-muted text-xs mt-0.5">{{ srv.category }}</div>
         <div class="text-brand-orange font-semibold text-sm mt-2">{{ srv.price }}</div>
       </button>
     </div>
@@ -70,10 +70,10 @@
         :subtitle="comparisonSubtitle"
       />
       <div class="flex flex-wrap items-center gap-3 shrink-0">
-        <label class="text-sm font-semibold text-gray-600">Sort by</label>
+        <label class="text-sm font-semibold text-muted">Sort by</label>
         <select
           v-model="sortBy"
-          class="border-2 border-gray-300 bg-white text-brand-charcoal px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-brand-blue"
+          class="border-2 border-theme bg-surface text-primary px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-brand-blue-700 transition-all duration-200"
         >
           <option value="price-asc">Lowest price</option>
           <option value="price-desc">Highest price</option>
@@ -83,34 +83,35 @@
       </div>
     </div>
 
-    <div v-if="comparisonRows.length === 0" class="bg-white rounded-xl border border-gray-200 p-10 text-center">
-      <div class="text-brand-charcoal font-semibold">No providers found for this service</div>
-      <div class="text-gray-500 text-sm mt-2">Select another service or clear your search.</div>
+    <div v-if="comparisonRows.length === 0" class="bg-surface border border-theme rounded-xl p-10 text-center">
+      <div class="text-primary font-semibold">No providers found for this service</div>
+      <div class="text-muted text-sm mt-2">Select another service or clear your search.</div>
     </div>
 
     <template v-else>
-      <div class="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-8">
+      <!-- Desktop table -->
+      <div class="hidden lg:block bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm mb-8">
         <table class="w-full text-left">
-          <thead class="bg-gray-50 border-b border-gray-200">
+          <thead class="bg-subtle border-b border-theme">
             <tr>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Provider</th>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Rating</th>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Location</th>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Price</th>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Pickup fee</th>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase">Turnaround</th>
-              <th class="p-4 text-xs font-semibold text-gray-500 uppercase" />
+              <th class="p-4 text-xs font-semibold text-muted uppercase">Provider</th>
+              <th class="p-4 text-xs font-semibold text-muted uppercase">Rating</th>
+              <th class="p-4 text-xs font-semibold text-muted uppercase">Location</th>
+              <th class="p-4 text-xs font-semibold text-muted uppercase">Price</th>
+              <th class="p-4 text-xs font-semibold text-muted uppercase">Pickup fee</th>
+              <th class="p-4 text-xs font-semibold text-muted uppercase">Turnaround</th>
+              <th class="p-4 text-xs font-semibold text-muted uppercase" />
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-border-theme">
             <tr
               v-for="row in comparisonRows"
               :key="row.provider.id"
-              class="hover:bg-gray-50/80 transition-colors"
-              :class="{ 'bg-brand-blue/5': row.isCheapest }"
+              class="hover:bg-subtle transition-colors"
+              :class="{ 'bg-brand-blue-50': row.isCheapest }"
             >
               <td class="p-4">
-                <div class="font-semibold text-brand-charcoal">{{ row.provider.name }}</div>
+                <div class="font-semibold text-primary">{{ row.provider.name }}</div>
                 <span
                   v-if="row.isCheapest"
                   class="inline-block mt-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full"
@@ -120,15 +121,15 @@
               </td>
               <td class="p-4">
                 <span class="font-bold text-brand-orange">{{ row.provider.rating }}</span>
-                <span class="text-gray-400 text-xs ml-1">({{ row.provider.reviewCount }})</span>
+                <span class="text-muted text-xs ml-1">({{ row.provider.reviewCount }})</span>
               </td>
-              <td class="p-4 text-sm text-gray-600">{{ row.provider.location }}</td>
+              <td class="p-4 text-sm text-muted">{{ row.provider.location }}</td>
               <td class="p-4">
-                <span class="font-bold text-brand-charcoal">KSh {{ row.offer.price }}</span>
-                <span class="text-gray-500 text-xs block">{{ row.offer.unit }}</span>
+                <span class="font-bold text-primary">KSh {{ row.offer.price }}</span>
+                <span class="text-muted text-xs block">{{ row.offer.unit }}</span>
               </td>
-              <td class="p-4 text-sm text-gray-600">{{ row.provider.pickupFee }}</td>
-              <td class="p-4 text-sm text-gray-600">{{ row.offer.turnaround }}</td>
+              <td class="p-4 text-sm text-muted">{{ row.provider.pickupFee }}</td>
+              <td class="p-4 text-sm text-muted">{{ row.offer.turnaround }}</td>
               <td class="p-4">
                 <NuxtLink
                   :to="row.bookHref"
@@ -142,6 +143,7 @@
         </table>
       </div>
 
+      <!-- Mobile cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:hidden">
         <ProviderCompareCard
           v-for="row in comparisonRows"

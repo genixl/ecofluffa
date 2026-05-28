@@ -13,9 +13,9 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div class="text-brand-blue font-bold text-lg mb-1">Search Services</div>
-        <div class="text-gray-500 text-sm mb-4">
+      <div class="theme-card rounded-xl p-6">
+        <div class="font-bold text-lg mb-1" style="color: var(--brand-blue);">Search Services</div>
+        <div class="text-muted text-sm mb-4">
           Find wash, iron, dry clean, and specialty laundry options.
         </div>
         <InputField
@@ -32,9 +32,9 @@
         </NuxtLink>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div class="text-brand-blue font-bold text-lg mb-1">Track Your Order</div>
-        <div class="text-gray-500 text-sm mb-4">
+      <div class="theme-card rounded-xl p-6">
+        <div class="font-bold text-lg mb-1" style="color: var(--brand-blue);">Track Your Order</div>
+        <div class="text-muted text-sm mb-4">
           Enter your order ID to see live status and pickup details.
         </div>
         <InputField
@@ -62,7 +62,8 @@
       />
       <NuxtLink
         to="/customer/orders"
-        class="text-brand-blue font-semibold text-sm hover:underline shrink-0"
+        class="font-semibold text-sm hover:underline shrink-0"
+        style="color: var(--brand-blue);"
       >
         View all orders →
       </NuxtLink>
@@ -127,3 +128,16 @@ const trackOrder = () => {
 
 definePageMeta({ layout: "dashboard" });
 </script>
+
+<style scoped>
+.theme-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.theme-card:hover {
+  box-shadow: var(--shadow-md);
+}
+</style>

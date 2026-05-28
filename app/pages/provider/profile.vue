@@ -5,7 +5,7 @@
       subtitle="Update your public details"
     />
 
-    <form class="border border-brand-gray bg-brand-white p-6" @submit.prevent="save">
+    <form class="bg-surface border border-theme rounded-xl p-6 shadow-theme-sm" @submit.prevent="save">
       <InputField
         label="Business Name"
         type="text"
@@ -50,4 +50,3 @@ const save = () => {
 
 definePageMeta({ layout: "dashboard" });
 </script>
-

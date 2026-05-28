@@ -12,9 +12,9 @@
       <CustomerStatCard label="Messages" :value="adminStats.messageCount" hint="Order conversations" />
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-8 shadow-sm">
-      <div class="text-brand-blue font-bold mb-2">Unified workflow</div>
-      <ol class="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+    <div class="bg-surface border border-theme rounded-xl p-5 mb-8 shadow-theme-sm">
+      <div class="font-bold mb-2" style="color: var(--brand-blue);">Unified workflow</div>
+      <ol class="text-sm text-muted space-y-2 list-decimal list-inside">
         <li>Customer books a service → order appears for provider & admin.</li>
         <li>Provider accepts & updates status → customer timeline & admin feed update instantly.</li>
         <li>Customer & provider message on the order → all roles see activity.</li>
