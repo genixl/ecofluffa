@@ -38,20 +38,39 @@
           <Icon :name="isDark ? 'mdi:weather-sunny' : 'mdi:moon-waning-crescent'" size="20" />
         </button>
 
-        <NuxtLink
-          to="/auth/login"
-          class="px-4 py-2 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:opacity-80"
-          style="border-color: var(--brand-blue); color: var(--brand-blue);"
-        >
-          Log In
-        </NuxtLink>
-        <NuxtLink
-          to="/auth/register"
-          class="px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200 hover:opacity-90"
-          style="background-color: var(--brand-orange);"
-        >
-          Register
-        </NuxtLink>
+        <!-- Logged in: user chip + logout -->
+        <template v-if="isLoggedIn">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
+            style="background-color: var(--brand-blue-light); color: var(--brand-blue);">
+            <Icon :name="roleIcon" size="18" />
+            <span>{{ userName || roleLabel }}</span>
+          </div>
+          <button
+            @click="handleLogout"
+            class="px-4 py-2 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:opacity-80"
+            style="border-color: var(--border-color); color: var(--text-muted);"
+          >
+            Log Out
+          </button>
+        </template>
+
+        <!-- Logged out: login + register -->
+        <template v-else>
+          <NuxtLink
+            to="/auth/login"
+            class="px-4 py-2 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:opacity-80"
+            style="border-color: var(--brand-blue); color: var(--brand-blue);"
+          >
+            Log In
+          </NuxtLink>
+          <NuxtLink
+            to="/auth/register"
+            class="px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200 hover:opacity-90"
+            style="background-color: var(--brand-orange);"
+          >
+            Register
+          </NuxtLink>
+        </template>
       </div>
 
       <!-- Mobile Right: theme + hamburger -->
@@ -85,6 +104,16 @@
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <div class="px-4 py-4 flex flex-col gap-1">
+
+          <!-- User chip (mobile, logged in) -->
+          <div v-if="isLoggedIn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl mb-1"
+            style="background-color: var(--brand-blue-light);">
+            <Icon :name="roleIcon" size="18" style="color: var(--brand-blue);" />
+            <span class="text-sm font-bold" style="color: var(--brand-blue);">{{ userName || roleLabel }}</span>
+            <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full"
+              style="background-color: var(--brand-blue); color: #fff;">{{ roleLabel }}</span>
+          </div>
+
           <NuxtLink
             v-for="link in navLinks"
             :key="link.to"
@@ -97,19 +126,31 @@
           >
             {{ link.label }}
           </NuxtLink>
+
           <div class="flex gap-2 mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
-            <NuxtLink
-              to="/auth/login"
-              @click="mobileOpen = false"
-              class="flex-1 text-center px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all"
-              style="border-color: var(--brand-blue); color: var(--brand-blue);"
-            >Log In</NuxtLink>
-            <NuxtLink
-              to="/auth/register"
-              @click="mobileOpen = false"
-              class="flex-1 text-center px-4 py-2.5 text-sm font-semibold rounded-lg text-white transition-all"
-              style="background-color: var(--brand-orange);"
-            >Register</NuxtLink>
+            <template v-if="isLoggedIn">
+              <button
+                @click="handleLogout"
+                class="flex-1 text-center px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all"
+                style="border-color: var(--border-color); color: var(--text-muted);"
+              >
+                Log Out
+              </button>
+            </template>
+            <template v-else>
+              <NuxtLink
+                to="/auth/login"
+                @click="mobileOpen = false"
+                class="flex-1 text-center px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all"
+                style="border-color: var(--brand-blue); color: var(--brand-blue);"
+              >Log In</NuxtLink>
+              <NuxtLink
+                to="/auth/register"
+                @click="mobileOpen = false"
+                class="flex-1 text-center px-4 py-2.5 text-sm font-semibold rounded-lg text-white transition-all"
+                style="background-color: var(--brand-orange);"
+              >Register</NuxtLink>
+            </template>
           </div>
         </div>
       </div>
@@ -118,25 +159,71 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
+import { useAuth } from '~/composables/useAuth'
+
+const route  = useRoute()
+const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
+const { role, userName, isLoggedIn, logout } = useAuth()
 
 const mobileOpen = ref(false)
 
 // Close drawer on route change
 watch(() => route.path, () => { mobileOpen.value = false })
 
-const navLinks = [
-  { to: '/', label: 'Home' },
-  { to: '/browse', label: 'Browse Providers' },
-  { to: '/customer', label: 'Customer' },
-  { to: '/provider', label: 'Provider' },
-  { to: '/admin', label: 'Admin' },
-]
+const roleLabel = computed(() => {
+  if (role.value === 'customer') return 'Customer'
+  if (role.value === 'provider') return 'Provider'
+  if (role.value === 'admin')    return 'Admin'
+  return ''
+})
+
+const roleIcon = computed(() => {
+  if (role.value === 'customer') return 'mdi:account'
+  if (role.value === 'provider') return 'mdi:store'
+  if (role.value === 'admin')    return 'mdi:shield-account'
+  return 'mdi:account'
+})
+
+// Top navbar links — public/general only (dashboard links stay in the sidebar)
+const navLinks = computed(() => {
+  if (role.value === 'customer') {
+    return [
+      { to: '/',        label: 'Home'            },
+      { to: '/browse',  label: 'Browse Providers' },
+      { to: '/about',   label: 'About Us'        },
+      { to: '/contact', label: 'Contact Support' },
+    ]
+  }
+  if (role.value === 'provider') {
+    return [
+      { to: '/',        label: 'Home'            },
+      { to: '/about',   label: 'About Us'        },
+      { to: '/contact', label: 'Contact Support' },
+    ]
+  }
+  if (role.value === 'admin') {
+    return [
+      { to: '/', label: 'Home' },
+    ]
+  }
+  // Public (not logged in)
+  return [
+    { to: '/',        label: 'Home'            },
+    { to: '/about',   label: 'About Us'        },
+    { to: '/contact', label: 'Contact Support' },
+  ]
+})
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
+}
+
+const handleLogout = () => {
+  mobileOpen.value = false
+  logout()
+  router.push('/')
 }
 </script>
 

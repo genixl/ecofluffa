@@ -23,7 +23,7 @@
         <!-- Role label -->
         <div class="px-5 py-5">
           <div class="flex items-center gap-3 mb-1">
-            <Icon :name="roleEmoji" size="24" />
+            <Icon :name="roleEmoji" size="24" style="color: var(--brand-blue);" />
             <div>
               <div class="font-bold text-sm" style="color: var(--brand-blue);">{{ roleLabel }}</div>
               <div class="text-xs" style="color: var(--text-muted);">Dashboard</div>
@@ -54,14 +54,14 @@
 
         <!-- Logout -->
         <div class="px-3 pb-5" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-          <NuxtLink
-            to="/"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 w-full"
+          <button
+            @click="handleLogout"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 w-full hover:bg-[var(--bg-subtle)]"
             style="color: var(--text-muted);"
           >
             <Icon name="mdi:logout" size="18" />
-            <span>Exit to Home</span>
-          </NuxtLink>
+            <span>Log Out</span>
+          </button>
         </div>
       </aside>
 
@@ -97,19 +97,18 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
+import { useAuth } from '~/composables/useAuth'
+
+const route  = useRoute()
+const router = useRouter()
+const { role, logout } = useAuth()
+
 const sidebarOpen = ref(false)
 
 // Close sidebar on route change
 watch(() => route.path, () => { sidebarOpen.value = false })
 
 type NavItem = { to: string; label: string; icon: string; active: boolean }
-
-const role = computed(() => {
-  if (route.path.startsWith('/customer')) return 'customer'
-  if (route.path.startsWith('/provider')) return 'provider'
-  return 'admin'
-})
 
 const roleLabel = computed(() => {
   if (role.value === 'customer') return 'Customer'
@@ -124,40 +123,52 @@ const roleEmoji = computed(() => {
 })
 
 const navItems = computed<NavItem[]>(() => {
-  const prefix = role.value === 'customer' ? '/customer'
-    : role.value === 'provider' ? '/provider'
-    : '/admin'
+  const r = role.value
 
-  const items = role.value === 'customer'
+  const items = r === 'customer'
     ? [
-        { to: `${prefix}`, label: 'Dashboard', icon: 'mdi:home' },
-        { to: `${prefix}/services`, label: 'Find Services', icon: 'mdi:magnify' },
-        { to: `${prefix}/orders`, label: 'My Orders', icon: 'mdi:package' },
-        { to: `${prefix}/profile`, label: 'Profile', icon: 'mdi:account' },
+        { to: '/customer',          label: 'Dashboard',    icon: 'mdi:home' },
+        { to: '/customer/services', label: 'Find Services', icon: 'mdi:magnify' },
+        { to: '/customer/orders',   label: 'My Orders',    icon: 'mdi:package' },
+        { to: '/customer/profile',  label: 'Profile',      icon: 'mdi:account' },
       ]
-    : role.value === 'provider'
+    : r === 'provider'
       ? [
-          { to: `${prefix}`, label: 'Dashboard', icon: 'mdi:home' },
-          { to: `${prefix}/orders`, label: 'Incoming Orders', icon: 'mdi:inbox' },
-          { to: `${prefix}/services`, label: 'My Services', icon: 'mdi:washing-machine' },
-          { to: `${prefix}/profile`, label: 'Business Profile', icon: 'mdi:store' },
+          { to: '/provider',          label: 'Dashboard',       icon: 'mdi:home' },
+          { to: '/provider/orders',   label: 'Incoming Orders',  icon: 'mdi:inbox' },
+          { to: '/provider/services', label: 'My Services',      icon: 'mdi:washing-machine' },
+          { to: '/provider/profile',  label: 'Business Profile', icon: 'mdi:store' },
         ]
       : [
-          { to: `${prefix}`, label: 'Overview', icon: 'mdi:chart-box' },
-          { to: `${prefix}/orders`, label: 'All Orders', icon: 'mdi:package' },
-          { to: `${prefix}/providers`, label: 'Providers', icon: 'mdi:store' },
-          { to: `${prefix}/customers`, label: 'Customers', icon: 'mdi:account-group' },
-          { to: `${prefix}/reports`, label: 'Reports', icon: 'mdi:chart-line' },
+          { to: '/admin',            label: 'Overview',   icon: 'mdi:chart-box' },
+          { to: '/admin/orders',     label: 'All Orders', icon: 'mdi:package' },
+          { to: '/admin/providers',  label: 'Providers',  icon: 'mdi:store' },
+          { to: '/admin/customers',  label: 'Customers',  icon: 'mdi:account-group' },
+          { to: '/admin/reports',    label: 'Reports',    icon: 'mdi:chart-line' },
         ]
 
   return items.map(it => ({
     ...it,
-    active: route.path === it.to || (it.to !== prefix && route.path.startsWith(`${it.to}/`)) || (it.to === prefix && route.path === prefix),
+    active:
+      route.path === it.to ||
+      (it.to !== '/customer' && it.to !== '/provider' && it.to !== '/admin' && route.path.startsWith(`${it.to}/`)),
   }))
 })
+
+const handleLogout = () => {
+  sidebarOpen.value = false
+  logout()
+  router.push('/')
+}
 </script>
 
 <style scoped>
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 40;
+}
 .fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

@@ -125,16 +125,23 @@ export function usePlatform() {
     [...activities.value].sort((a, b) => b.at.localeCompare(a.at)),
   );
 
-  const adminStats = computed(() => ({
-    totalOrders: orders.value.length,
-    activeOrders: orders.value.filter((o) =>
-      ["pending", "washing", "ready"].includes(o.status),
-    ).length,
-    pending: orders.value.filter((o) => o.status === "pending").length,
-    delivered: orders.value.filter((o) => o.status === "delivered").length,
-    cancelled: orders.value.filter((o) => o.status === "cancelled").length,
-    messageCount: messages.value.length,
-  }));
+  const adminStats = computed(() => {
+    const uniqueProviders = new Set(orders.value.map((o) => o.provider)).size;
+    const uniqueCustomers = new Set(orders.value.map((o) => o.customerName)).size;
+
+    return {
+      totalOrders: orders.value.length,
+      activeOrders: orders.value.filter((o) =>
+        ["pending", "washing", "ready"].includes(o.status),
+      ).length,
+      pending: orders.value.filter((o) => o.status === "pending").length,
+      delivered: orders.value.filter((o) => o.status === "delivered").length,
+      cancelled: orders.value.filter((o) => o.status === "cancelled").length,
+      messageCount: messages.value.length,
+      totalProviders: uniqueProviders,
+      totalCustomers: uniqueCustomers,
+    };
+  });
 
   const customerStats = computed(() => ({
     active: orders.value.filter((o) =>

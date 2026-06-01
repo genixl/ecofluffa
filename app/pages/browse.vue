@@ -11,23 +11,30 @@
           <InputField
             label="Search providers"
             type="text"
-            placeholder="e.g., Sunshine"
+            placeholder="e.g., Sunshine, North End…"
             v-model="query"
           />
         </div>
         <div class="results-badge text-sm">
-          Showing {{ providers.length }} provider results
+          Showing {{ filteredProviders.length }} provider{{ filteredProviders.length === 1 ? '' : 's' }}
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="filteredProviders.length === 0" class="text-center py-20">
+        <Icon name="mdi:store-search" size="48" style="color: var(--text-muted);" class="mb-3" />
+        <div class="font-bold mb-1" style="color: var(--brand-blue);">No providers match your search</div>
+        <div class="text-sm" style="color: var(--text-muted);">Try a different name or location.</div>
+      </div>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ProviderCard
-          v-for="p in providers"
-          :key="p.name"
+          v-for="p in filteredProviders"
+          :key="p.id"
           :name="p.name"
           :location="p.location"
           :rating="p.rating"
-          :services="p.services"
+          :services="p.offers.map(o => serviceName(o.serviceId))"
+          :to="`/providers/${p.id}`"
         />
       </div>
     </div>
@@ -35,55 +42,24 @@
 </template>
 
 <script setup lang="ts">
-type Provider = {
-  name: string;
-  location: string;
-  rating: number;
-  services: string[];
-};
+import { HARDCODED_LAUNDRY_PROVIDERS } from '~/data/customerProviders'
+import { HARDCODED_LAUNDRY_SERVICES } from '~/data/customerServices'
 
-const query = ref("");
+const query = ref('')
 
-const providers = ref<Provider[]>([
-  {
-    name: "Ocean Breeze Laundry",
-    location: "Riverside District",
-    rating: 4.6,
-    services: ["Wash & Fold", "Ironing", "Dry Cleaning"],
-  },
-  {
-    name: "Sunshine Suds Co.",
-    location: "Central Business Area",
-    rating: 4.4,
-    services: ["Wash & Fold", "Stain Removal", "Blanket Cleaning"],
-  },
-  {
-    name: "FreshWave Laundry",
-    location: "North End",
-    rating: 4.7,
-    services: ["Wash & Fold", "Delicate Care", "Curtain Cleaning"],
-  },
-  {
-    name: "CitySpin Laundromat",
-    location: "Downtown",
-    rating: 4.3,
-    services: ["Wash & Fold", "Steam Press", "Shoe Cleaning"],
-  },
-  {
-    name: "GreenLeaf Cleaners",
-    location: "Westside",
-    rating: 4.5,
-    services: ["Eco Wash", "Delicate Care", "Blanket Cleaning"],
-  },
-  {
-    name: "RoyalRinse Laundry",
-    location: "East Heights",
-    rating: 4.2,
-    services: ["Dry Cleaning", "Stain Removal", "Curtain Cleaning"],
-  },
-]);
+const filteredProviders = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  if (!q) return HARDCODED_LAUNDRY_PROVIDERS
+  return HARDCODED_LAUNDRY_PROVIDERS.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.location.toLowerCase().includes(q)
+  )
+})
 
-definePageMeta({ layout: "default" });
+const serviceName = (id: string) =>
+  HARDCODED_LAUNDRY_SERVICES.find(s => s.id === id)?.title ?? id.replace(/-/g, ' ')
+
+definePageMeta({ layout: 'default' })
 </script>
 
 <style scoped>
