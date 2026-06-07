@@ -77,5 +77,5 @@ const remove = (name: string) => {
   if (p) p.status = "Removed";
 };
 
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>

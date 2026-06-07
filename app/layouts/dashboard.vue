@@ -3,24 +3,20 @@
     <AppNavbar />
 
     <div class="flex flex-1 relative">
-      <!-- Mobile overlay -->
       <Transition name="fade">
         <div v-if="sidebarOpen" class="sidebar-overlay lg:hidden" @click="sidebarOpen = false" />
       </Transition>
 
-      <!-- Sidebar -->
       <aside
         class="fixed lg:static top-0 left-0 h-full lg:h-auto w-72 lg:w-64 z-50 lg:z-auto flex-shrink-0 transition-transform duration-300 ease-in-out flex flex-col"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
         style="background-color: var(--bg-surface); border-right: 1px solid var(--border-color); box-shadow: var(--shadow-md);"
       >
-        <!-- Sidebar header (mobile only) -->
         <div class="flex items-center justify-between px-5 py-4 lg:hidden" style="border-bottom: 1px solid var(--border-color);">
           <div class="flex items-center gap-2 font-bold text-lg" style="color: var(--brand-blue);"><Icon name="mdi:water" size="24" />EcoFluffa</div>
           <button @click="sidebarOpen = false" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: var(--bg-subtle); color: var(--text-muted);">✕</button>
         </div>
 
-        <!-- Role label -->
         <div class="px-5 py-5">
           <div class="flex items-center gap-3 mb-1">
             <Icon :name="roleEmoji" size="24" style="color: var(--brand-blue);" />
@@ -31,7 +27,6 @@
           </div>
         </div>
 
-        <!-- Nav items -->
         <nav class="flex-1 px-3 pb-4 overflow-y-auto">
           <div class="flex flex-col gap-1">
             <NuxtLink
@@ -52,7 +47,6 @@
           </div>
         </nav>
 
-        <!-- Logout -->
         <div class="px-3 pb-5" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
           <button
             @click="handleLogout"
@@ -65,9 +59,7 @@
         </div>
       </aside>
 
-      <!-- Main content -->
       <div class="flex-1 flex flex-col min-w-0">
-        <!-- Mobile top bar -->
         <div
           class="lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-30"
           style="background-color: var(--bg-surface); border-bottom: 1px solid var(--border-color);"
@@ -97,57 +89,105 @@
 </template>
 
 <script setup lang="ts">
+import type { UserRole } from '~/types/supabase'
 import { useAuth } from '~/composables/useAuth'
 
-const route  = useRoute()
-const router = useRouter()
-const { role, logout } = useAuth()
+const route = useRoute()
+const supabase = useSupabaseClient()
+const { role, signOut, fetchProfile, authUserId, user } = useAuth()
+const { needsOnboarding, fetchMyProvider } = useProviderProfile()
 
 const sidebarOpen = ref(false)
 
-// Close sidebar on route change
 watch(() => route.path, () => { sidebarOpen.value = false })
+
+/** Nav matches the dashboard URL you're on (customer/provider/admin). */
+const dashboardRole = computed<UserRole | null>(() => {
+  if (route.path.startsWith('/customer')) return 'customer'
+  if (route.path.startsWith('/provider')) return 'provider'
+  if (route.path.startsWith('/admin')) return 'admin'
+  return role.value
+})
+
+// Load profile in background; nav does not wait on it
+onMounted(async () => {
+  const id = user.value?.id ?? authUserId.value
+  if (id) {
+    await fetchProfile(id)
+    return
+  }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session?.user?.id) {
+    authUserId.value = session.user.id
+    await fetchProfile(session.user.id)
+  }
+  if (route.path.startsWith('/provider')) {
+    await fetchMyProvider()
+  }
+})
+
+watch(
+  [role, () => route.path],
+  () => {
+    const r = role.value
+    if (!r) return
+    const path = route.path
+    if (r === 'customer' && (path.startsWith('/admin') || path.startsWith('/provider'))) {
+      navigateTo('/customer', { replace: true })
+    } else if (r === 'provider' && path.startsWith('/admin')) {
+      navigateTo('/provider', { replace: true })
+    } else if (r === 'admin' && path.startsWith('/customer')) {
+      navigateTo('/admin', { replace: true })
+    }
+  }
+)
 
 type NavItem = { to: string; label: string; icon: string; active: boolean }
 
 const roleLabel = computed(() => {
-  if (role.value === 'customer') return 'Customer'
-  if (role.value === 'provider') return 'Provider'
-  return 'Admin'
+  if (dashboardRole.value === 'customer') return 'Customer'
+  if (dashboardRole.value === 'provider') return 'Provider'
+  if (dashboardRole.value === 'admin') return 'Admin'
+  return 'Dashboard'
 })
 
 const roleEmoji = computed(() => {
-  if (role.value === 'customer') return 'mdi:washing-machine'
-  if (role.value === 'provider') return 'mdi:store'
-  return 'mdi:shield-account'
+  if (dashboardRole.value === 'customer') return 'mdi:washing-machine'
+  if (dashboardRole.value === 'provider') return 'mdi:store'
+  if (dashboardRole.value === 'admin') return 'mdi:shield-account'
+  return 'mdi:view-dashboard'
 })
 
 const navItems = computed<NavItem[]>(() => {
-  const r = role.value
-
-  const items = r === 'customer'
-    ? [
-        { to: '/customer',          label: 'Dashboard',    icon: 'mdi:home' },
-        { to: '/customer/services', label: 'Find Services', icon: 'mdi:magnify' },
-        { to: '/customer/orders',   label: 'My Orders',    icon: 'mdi:package' },
-        { to: '/customer/profile',  label: 'Profile',      icon: 'mdi:account' },
-      ]
-    : r === 'provider'
+  const items =
+    dashboardRole.value === 'customer'
       ? [
-          { to: '/provider',          label: 'Dashboard',       icon: 'mdi:home' },
-          { to: '/provider/orders',   label: 'Incoming Orders',  icon: 'mdi:inbox' },
-          { to: '/provider/services', label: 'My Services',      icon: 'mdi:washing-machine' },
-          { to: '/provider/profile',  label: 'Business Profile', icon: 'mdi:store' },
+          { to: '/customer', label: 'Dashboard', icon: 'mdi:home' },
+          { to: '/customer/services', label: 'Find Services', icon: 'mdi:magnify' },
+          { to: '/customer/orders', label: 'My Orders', icon: 'mdi:package' },
+          { to: '/customer/profile', label: 'Profile', icon: 'mdi:account' },
         ]
-      : [
-          { to: '/admin',            label: 'Overview',   icon: 'mdi:chart-box' },
-          { to: '/admin/orders',     label: 'All Orders', icon: 'mdi:package' },
-          { to: '/admin/providers',  label: 'Providers',  icon: 'mdi:store' },
-          { to: '/admin/customers',  label: 'Customers',  icon: 'mdi:account-group' },
-          { to: '/admin/reports',    label: 'Reports',    icon: 'mdi:chart-line' },
-        ]
+      : dashboardRole.value === 'provider'
+        ? needsOnboarding.value
+          ? [{ to: '/provider/setup', label: 'Complete setup', icon: 'mdi:clipboard-check' }]
+          : [
+              { to: '/provider', label: 'Dashboard', icon: 'mdi:home' },
+              { to: '/provider/orders', label: 'Incoming Orders', icon: 'mdi:inbox' },
+              { to: '/provider/services', label: 'My Services', icon: 'mdi:washing-machine' },
+              { to: '/provider/profile', label: 'Business Profile', icon: 'mdi:store' },
+            ]
+        : dashboardRole.value === 'admin'
+          ? [
+              { to: '/admin', label: 'Overview', icon: 'mdi:chart-box' },
+              { to: '/admin/orders', label: 'All Orders', icon: 'mdi:package' },
+              { to: '/admin/providers', label: 'Providers', icon: 'mdi:store' },
+              { to: '/admin/customers', label: 'Customers', icon: 'mdi:account-group' },
+              { to: '/admin/contacts', label: 'Support', icon: 'mdi:headset' },
+              { to: '/admin/reports', label: 'Reports', icon: 'mdi:chart-line' },
+            ]
+          : []
 
-  return items.map(it => ({
+  return items.map((it) => ({
     ...it,
     active:
       route.path === it.to ||
@@ -155,10 +195,11 @@ const navItems = computed<NavItem[]>(() => {
   }))
 })
 
-const handleLogout = () => {
+const handleLogout = async () => {
   sidebarOpen.value = false
-  logout()
-  router.push('/')
+  await signOut()
+  authUserId.value = null
+  await navigateTo('/')
 }
 </script>
 

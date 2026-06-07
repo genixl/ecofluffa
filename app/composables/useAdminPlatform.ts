@@ -1,11 +1,10 @@
-import { usePlatform } from "~/composables/usePlatform";
-import type { ProviderOrderStatus } from "~/data/platform";
+import type { OrderStatus } from '~/types/supabase'
 
 export function useAdminPlatform() {
-  const platform = usePlatform();
+  const platform = usePlatform()
 
-  const updateOrderStatus = (id: string, status: ProviderOrderStatus) =>
-    platform.updateOrderStatus(id, status, "admin", "Ecofluffa Admin");
+  const updateOrderStatus = (id: string, status: OrderStatus) =>
+    platform.updateOrderStatus(id, status, 'admin', 'Ecofluffa Admin')
 
   return {
     orders: platform.orders,
@@ -17,5 +16,6 @@ export function useAdminPlatform() {
     addMessage: platform.addMessage,
     statusLabels: platform.statusLabels,
     getFlowStepIndex: platform.getFlowStepIndex,
-  };
+    loadAll: platform.loadAll,
+  }
 }

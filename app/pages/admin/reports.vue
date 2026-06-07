@@ -75,5 +75,5 @@ const providerPerformance = ref<ProviderPerf[]>([
   { name: "FreshWave Laundry", avgRating: 4.7, completed: 982 },
 ]);
 
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>

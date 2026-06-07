@@ -1,99 +1,55 @@
 <template>
   <div>
     <div class="flex items-end justify-between gap-6 mb-6">
-      <SectionHeader
-        title="Your Services"
-        subtitle="Manage what you offer"
-      />
-      <AppButton
-        label="Add Service"
-        variant="primary"
-        type="button"
-        @click="openAddServiceCard"
-      />
+      <SectionHeader title="Your Services" subtitle="Manage what you offer on the platform" />
+      <AppButton label="Add Service" variant="primary" type="button" @click="openAdd" />
     </div>
 
-    <div
-      v-if="showServiceForm"
-      class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-md"
-    >
+    <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading services…</div>
+
+    <!-- Add / Edit form -->
+    <div v-if="showForm" class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-md">
       <div class="font-bold text-xl mb-1" style="color: var(--brand-blue);">
-        {{ editingServiceIndex === null ? "Add New Service" : "Edit Service" }}
+        {{ editingId ? 'Edit Service' : 'Add New Service' }}
       </div>
-      <div class="text-muted text-sm mb-6">
-        Enter the details of the service you want to offer.
-      </div>
+      <div class="text-muted text-sm mb-6">Enter the details of the service you want to offer.</div>
 
-      <InputField
-        label="Service Name"
-        type="text"
-        placeholder="e.g. Wash & Fold"
-        v-model="form.title"
-      />
-      <InputField
-        label="Price"
-        type="text"
-        placeholder="e.g. KSh 195 / kg"
-        v-model="form.price"
-      />
-
-      <div class="mb-6">
-        <label class="block text-primary mb-3 font-semibold text-sm">
-          Description
-        </label>
-        <textarea
-          v-model="form.description"
-          rows="4"
-          placeholder="Describe what this service includes"
-          class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 focus:ring-2 focus:ring-brand-blue-700/20 transition-all duration-200"
-        />
+      <div class="mb-4">
+        <label class="block text-primary mb-2 font-semibold text-sm">Service</label>
+        <select v-model="form.service_id" :disabled="!!editingId"
+          class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all">
+          <option value="">Select a service…</option>
+          <option v-for="s in availableToAdd" :key="s.id" :value="s.id">{{ s.title }}</option>
+        </select>
       </div>
 
-      <div class="flex flex-wrap gap-3">
-        <AppButton
-          :label="editingServiceIndex === null ? 'Save Service' : 'Update Service'"
-          variant="primary"
-          type="button"
-          @click="saveService"
-        />
-        <AppButton
-          label="Cancel"
-          variant="outline"
-          type="button"
-          @click="closeServiceForm"
-        />
+      <InputField label="Price (numbers only, e.g. 195)" type="text" placeholder="195" v-model="form.price" />
+      <InputField label="Unit (e.g. per kg, per item)" type="text" placeholder="per kg" v-model="form.unit" />
+      <InputField label="Turnaround (e.g. 24 hrs)" type="text" placeholder="24 hrs" v-model="form.turnaround" />
+
+      <div class="flex flex-wrap gap-3 mt-4">
+        <AppButton :label="editingId ? 'Update Service' : 'Save Service'" variant="primary" type="button" @click="save" />
+        <AppButton label="Cancel" variant="outline" type="button" @click="closeForm" />
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div v-if="!loading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-if="myServices.length === 0" class="col-span-2 text-muted text-sm text-center py-10">
+        No services yet. Click "Add Service" to get started.
+      </div>
       <div
-        v-for="(srv, idx) in services"
-        :key="srv.title"
+        v-for="ps in myServices"
+        :key="ps.id"
         class="bg-surface border border-theme rounded-xl p-5 shadow-theme-sm hover:shadow-theme-md transition-shadow"
       >
-        <div class="font-bold text-lg" style="color: var(--brand-blue);">
-          {{ srv.title }}
-        </div>
-        <div class="text-primary text-sm mt-2 font-semibold">
-          {{ srv.price }}
-        </div>
-        <div class="text-muted text-sm mt-2">
-          {{ srv.description }}
-        </div>
+        <div class="font-bold text-lg" style="color: var(--brand-blue);">{{ ps.service?.title }}</div>
+        <div class="text-primary text-sm mt-2 font-semibold">KSh {{ ps.price }} {{ ps.unit }}</div>
+        <div class="text-muted text-sm mt-1">Turnaround: {{ ps.turnaround }}</div>
+        <div class="text-muted text-xs mt-1">{{ ps.service?.category }}</div>
 
         <div class="flex flex-wrap gap-3 mt-4">
-          <AppButton
-            label="Edit"
-            variant="outline"
-            type="button"
-            @click="openEditServiceCard(idx)"
-          />
-          <AppButton
-            label="Remove"
-            variant="outline"
-            type="button"
-            @click="removeService(idx)"
-          />
+          <AppButton label="Edit" variant="outline" type="button" @click="openEdit(ps)" />
+          <AppButton label="Remove" variant="outline" type="button" @click="remove(ps.id)" />
         </div>
       </div>
     </div>
@@ -101,70 +57,56 @@
 </template>
 
 <script setup lang="ts">
-type Service = {
-  title: string;
-  price: string;
-  description: string;
-};
+import type { ProviderService } from '~/types/supabase'
 
-const services = ref<Service[]>([
-  { title: "Wash & Fold", price: "KSh 195 / kg", description: "Daily laundry cleaning with folding." },
-  { title: "Ironing", price: "KSh 104 / item", description: "Pressing for shirts, pants, and uniforms." },
-  { title: "Delicate Care", price: "KSh 1,170 / basket", description: "Low-tumble cleaning for delicates." },
-]);
+const { myServices, loading: profileLoading, fetchMyProvider, addService, updateService, removeService } = useProviderProfile()
+const { services, fetchAll } = useServices()
 
-const showServiceForm = ref(false);
-const editingServiceIndex = ref<number | null>(null);
+const loading = ref(true)
+const showForm = ref(false)
+const editingId = ref<string | null>(null)
+const form = ref({ service_id: '', price: '', unit: '', turnaround: '' })
 
-const emptyForm = (): Service => ({
-  title: "",
-  price: "",
-  description: "",
-});
+onMounted(async () => {
+  await Promise.all([fetchMyProvider(), fetchAll()])
+  loading.value = false
+})
 
-const form = ref<Service>(emptyForm());
+const availableToAdd = computed(() =>
+  services.value.filter((s) => !myServices.value.some((ps) => ps.service_id === s.id))
+)
 
-const openAddServiceCard = () => {
-  editingServiceIndex.value = null;
-  form.value = emptyForm();
-  showServiceForm.value = true;
-};
+const openAdd = () => {
+  editingId.value = null
+  form.value = { service_id: '', price: '', unit: '', turnaround: '' }
+  showForm.value = true
+}
 
-const openEditServiceCard = (idx: number) => {
-  const srv = services.value[idx];
-  if (!srv) return;
-  editingServiceIndex.value = idx;
-  form.value = { ...srv };
-  showServiceForm.value = true;
-};
+const openEdit = (ps: ProviderService) => {
+  editingId.value = ps.id
+  form.value = { service_id: ps.service_id, price: ps.price, unit: ps.unit, turnaround: ps.turnaround }
+  showForm.value = true
+}
 
-const closeServiceForm = () => {
-  showServiceForm.value = false;
-  editingServiceIndex.value = null;
-  form.value = emptyForm();
-};
+const closeForm = () => {
+  showForm.value = false
+  editingId.value = null
+}
 
-const saveService = () => {
-  if (!form.value.title.trim() || !form.value.price.trim() || !form.value.description.trim()) {
-    return;
+const save = async () => {
+  if (!form.value.price || !form.value.unit || !form.value.turnaround) return
+  if (editingId.value) {
+    await updateService(editingId.value, form.value.price, form.value.unit, form.value.turnaround)
+  } else {
+    if (!form.value.service_id) return
+    await addService(form.value.service_id, form.value.price, form.value.unit, form.value.turnaround)
   }
+  closeForm()
+}
 
-  if (editingServiceIndex.value === null) {
-    services.value.unshift({ ...form.value });
-    closeServiceForm();
-    return;
-  }
+const remove = async (id: string) => {
+  await removeService(id)
+}
 
-  const idx = editingServiceIndex.value;
-  if (services.value[idx]) {
-    services.value[idx] = { ...form.value };
-  }
-  closeServiceForm();
-};
-
-const removeService = (idx: number) => {
-  services.value = services.value.filter((_, i) => i !== idx);
-};
-
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role', 'provider-onboarding'] })
 </script>

@@ -33,7 +33,7 @@
           :name="p.name"
           :location="p.location"
           :rating="p.rating"
-          :services="p.offers.map(o => serviceName(o.serviceId))"
+          :services="getProviderServices(p.id).map(ps => ps.service?.title ?? '')"
           :to="`/providers/${p.id}`"
         />
       </div>
@@ -42,22 +42,24 @@
 </template>
 
 <script setup lang="ts">
-import { HARDCODED_LAUNDRY_PROVIDERS } from '~/data/customerProviders'
-import { HARDCODED_LAUNDRY_SERVICES } from '~/data/customerServices'
-
+const { providers, providerServices, refreshCatalog, loading } = useServices()
 const query = ref('')
+
+onMounted(() => {
+  refreshCatalog()
+})
+
+const getProviderServices = (providerId: string) => 
+  providerServices.value.filter(ps => ps.provider_id === providerId)
 
 const filteredProviders = computed(() => {
   const q = query.value.trim().toLowerCase()
-  if (!q) return HARDCODED_LAUNDRY_PROVIDERS
-  return HARDCODED_LAUNDRY_PROVIDERS.filter(p =>
+  if (!q) return providers.value
+  return providers.value.filter(p =>
     p.name.toLowerCase().includes(q) ||
     p.location.toLowerCase().includes(q)
   )
 })
-
-const serviceName = (id: string) =>
-  HARDCODED_LAUNDRY_SERVICES.find(s => s.id === id)?.title ?? id.replace(/-/g, ' ')
 
 definePageMeta({ layout: 'default' })
 </script>

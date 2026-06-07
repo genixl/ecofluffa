@@ -59,7 +59,7 @@ const props = defineProps<{
 
 defineEmits(['update:modelValue'])
 
-const inputId = `input-${Math.random().toString(36).slice(2, 8)}`
+const inputId = useId()
 const focused = ref(false)
 const showToggle = ref(false)
 

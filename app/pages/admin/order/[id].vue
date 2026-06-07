@@ -1,108 +1,74 @@
 <template>
   <div>
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-      <div>
-        <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
-        <div class="text-brand-charcoal mt-2">
-          {{ order.customerName }} → {{ order.provider }}
-        </div>
-        <div class="text-sm text-gray-500 mt-1">
-          Pickup {{ order.pickupDate }} at {{ order.pickupTime }} · {{ order.pickupAddress }}
-        </div>
-      </div>
-      <OrderStatusBadge :status="order.status" />
-    </div>
+    <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading order…</div>
 
-    <div class="mt-8 bg-amber-50 border border-amber-200 rounded-xl p-5">
-      <div class="text-sm font-semibold text-amber-900 mb-3">Admin override status</div>
-      <div class="flex flex-wrap gap-2">
-        <AppButton
-          v-for="s in statusOptions"
-          :key="s"
-          :label="statusLabels[s]"
-          variant="outline"
-          type="button"
-          @click="overrideStatus(s)"
-        />
+    <template v-else-if="order">
+      <div class="flex items-start justify-between gap-6 mb-8">
+        <div>
+          <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
+          <div class="text-brand-charcoal mt-2">Provider: <span class="font-semibold">{{ order.provider?.name }}</span></div>
+          <div class="text-brand-charcoal text-sm mt-1">Customer: {{ order.customer?.full_name }}</div>
+          <div class="text-brand-charcoal text-sm mt-1">Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}</div>
+          <div class="text-brand-orange font-semibold text-sm mt-2">{{ order.total_estimate }}</div>
+        </div>
+        <OrderStatusBadge :status="order.status" />
       </div>
-    </div>
 
-    <div class="mt-8">
       <OrderFlowTimeline :status="order.status" :current-index="flowIndex" />
-    </div>
 
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <OrderMessagesPanel
-        :order-id="order.id"
-        current-role="admin"
-        sender-name="Ecofluffa Admin"
-        other-party-label="customer & provider"
-      />
-      <div>
-        <SectionHeader title="Order activity" subtitle="Full audit trail" />
-        <ActivityFeed
-          :items="orderActivities"
-          order-link-prefix="/admin/order"
-        />
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-surface border border-theme rounded-xl p-5">
+          <div class="text-xs font-semibold text-muted mb-1">Pickup Address</div>
+          <div class="text-primary">{{ order.pickup_address }}</div>
+        </div>
+        <div class="bg-surface border border-theme rounded-xl p-5">
+          <div class="text-xs font-semibold text-muted mb-1">Customer Phone</div>
+          <div class="text-primary">{{ order.customer?.phone || '—' }}</div>
+        </div>
+        <div class="bg-surface border border-theme rounded-xl p-5">
+          <div class="text-xs font-semibold text-muted mb-1">Notes</div>
+          <div class="text-primary text-sm">{{ order.notes || 'None' }}</div>
+        </div>
       </div>
-    </div>
 
-    <div class="mt-8">
-      <NuxtLink to="/admin/orders" class="text-brand-blue font-semibold text-sm hover:underline">
-        ← Back to all orders
-      </NuxtLink>
-    </div>
+      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <OrderMessagesPanel :order-id="order.id" current-role="admin" sender-name="Ecofluffa Admin" other-party-label="customer & provider" readonly />
+        <div>
+          <SectionHeader title="Activity Log" subtitle="Full audit trail" />
+          <ActivityFeed :items="orderActivities" order-link-prefix="/admin/order" />
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <SectionHeader title="Services" subtitle="What was ordered" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ServiceCard v-for="s in order.order_services" :key="s.id" :title="s.title" :price="s.price" :description="s.description" />
+        </div>
+      </div>
+    </template>
+
+    <div v-else class="text-center py-16 text-muted">Order not found.</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useAdminPlatform } from "~/composables/useAdminPlatform";
-import { usePlatform } from "~/composables/usePlatform";
-import type { ProviderOrderStatus } from "~/data/platform";
+const route = useRoute()
+const { getOrderById, getFlowStepIndex, recentActivities, loadAll } = useAdminPlatform()
 
-const route = useRoute();
-const { getOrderById, updateOrderStatus, statusLabels, getFlowStepIndex } =
-  useAdminPlatform();
-const { recentActivities } = usePlatform();
+const loading = ref(true)
+const routeId = computed(() => String(route.params.id ?? ''))
 
-const routeId = computed(() => String(route.params.id ?? ""));
+onMounted(async () => {
+  await loadAll(true)
+  loading.value = false
+})
 
-const statusOptions: ProviderOrderStatus[] = [
-  "pending",
-  "washing",
-  "ready",
-  "delivered",
-  "cancelled",
-];
-
-const order = computed(() => {
-  const existing = getOrderById(routeId.value);
-  return (
-    existing ?? {
-      id: routeId.value,
-      provider: "—",
-      customerName: "—",
-      customerPhone: "",
-      providerPhone: "",
-      status: "pending" as ProviderOrderStatus,
-      pickupDate: "—",
-      pickupTime: "—",
-      pickupAddress: "—",
-      totalEstimate: "—",
-      services: [],
-    }
-  );
-});
-
-const flowIndex = computed(() => getFlowStepIndex(order.value.status));
+const order = computed(() => getOrderById(routeId.value))
+const flowIndex = computed(() => order.value ? getFlowStepIndex(order.value.status) : -1)
 
 const orderActivities = computed(() =>
-  recentActivities.value.filter((a) => a.orderId === order.value.id),
-);
+  recentActivities.value.filter((a) => a.order_id === routeId.value)
+)
 
-const overrideStatus = (status: ProviderOrderStatus) => {
-  updateOrderStatus(order.value.id, status);
-};
-
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>

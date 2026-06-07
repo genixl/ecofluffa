@@ -1,50 +1,50 @@
 <template>
   <div>
-    <SectionHeader title="Incoming Orders" subtitle="Status changes notify customer and admin automatically" />
+    <SectionHeader title="All Orders" subtitle="Your assigned orders — click to manage" />
 
-    <div class="flex flex-wrap gap-3 mb-6">
-      <AppButton
-        v-for="s in filterStatuses"
-        :key="s"
-        :label="s === 'all' ? 'All' : statusLabels[s]"
-        :variant="s === activeFilter ? 'primary' : 'outline'"
-        type="button"
-        @click="activeFilter = s"
-      />
+    <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading orders…</div>
+
+    <div v-else-if="orders.length === 0" class="bg-surface border border-theme rounded-xl p-10 text-center">
+      <div class="text-primary font-semibold">No orders assigned yet</div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <OrderCard
-        v-for="o in filteredOrders"
-        :key="o.id"
-        :orderId="o.id"
-        :provider="o.provider"
-        :status="o.status"
-        :date="o.pickupDate"
-        role="provider"
-        :customer-name="o.customerName"
-        :pickup-address="o.pickupAddress"
-        :to="`/provider/order/${o.id}`"
-      />
+    <div v-else class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
+      <table class="w-full text-left">
+        <thead class="bg-subtle border-b border-theme">
+          <tr>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Order</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Customer</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Status</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Pickup Date</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase" />
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border-theme">
+          <tr v-for="o in orders" :key="o.id" class="hover:bg-subtle transition-colors">
+            <td class="p-4 font-semibold text-primary">{{ o.id }}</td>
+            <td class="p-4 text-sm text-primary">{{ o.customer?.full_name ?? '—' }}</td>
+            <td class="p-4"><OrderStatusBadge :status="o.status" /></td>
+            <td class="p-4 text-sm text-muted">{{ o.pickup_date }}</td>
+            <td class="p-4">
+              <NuxtLink :to="`/provider/order/${o.id}`" class="font-semibold text-sm hover:underline" style="color: var(--brand-blue);">
+                Manage →
+              </NuxtLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useProviderOrders } from "~/composables/useProviderOrders";
-import type { ProviderOrderStatus } from "~/data/platform";
+const { orders, loadAll } = useProviderOrders()
+const loading = ref(true)
 
-const { orders, statusLabels } = useProviderOrders();
+onMounted(async () => {
+  await loadAll()
+  loading.value = false
+})
 
-const filterStatuses = ["all", "pending", "washing", "ready", "delivered", "cancelled"] as const;
-type FilterStatus = (typeof filterStatuses)[number];
-
-const activeFilter = ref<FilterStatus>("all");
-
-const filteredOrders = computed(() => {
-  if (activeFilter.value === "all") return orders.value;
-  return orders.value.filter((o) => o.status === activeFilter.value);
-});
-
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role', 'provider-onboarding'] })
 </script>

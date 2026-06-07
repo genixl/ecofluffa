@@ -38,18 +38,18 @@
 
 <script setup lang="ts">
 import {
-  PROVIDER_ORDER_FLOW,
-  PROVIDER_STATUS_LABELS,
-  type ProviderOrderStatus,
-} from "~/data/providerOrders";
+  ORDER_FLOW,
+  STATUS_LABELS,
+  type OrderStatus,
+} from "~/types/supabase";
 
 const props = defineProps<{
-  status: ProviderOrderStatus;
+  status: OrderStatus;
   currentIndex: number;
 }>();
 
-const flow = PROVIDER_ORDER_FLOW;
-const labels = PROVIDER_STATUS_LABELS;
+const flow = ORDER_FLOW;
+const labels = STATUS_LABELS;
 
 const stepClass = (index: number) => {
   if (index < props.currentIndex) return "bg-brand-blue text-white";
@@ -57,7 +57,7 @@ const stepClass = (index: number) => {
   return "bg-gray-100 text-gray-500";
 };
 
-const stepHint = (step: ProviderOrderStatus, index: number) => {
+const stepHint = (step: OrderStatus, index: number) => {
   if (index < props.currentIndex) return "Completed";
   if (index === props.currentIndex) {
     if (step === "pending") return "Waiting for provider to accept";

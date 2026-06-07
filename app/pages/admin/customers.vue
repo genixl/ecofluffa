@@ -40,5 +40,5 @@ const customers = ref<CustomerRow[]>([
   { name: "Joseph Otieno", email: "joseph@example.com", phone: "+254 789 140 550", since: "2026-04-21" },
 ]);
 
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>

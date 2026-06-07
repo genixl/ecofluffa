@@ -14,7 +14,7 @@
     </div>
 
     <div class="text-xs text-gray-500 mt-2">
-      {{ provider.reviewCount }} reviews · Pickup: {{ provider.pickupFee }}
+      {{ provider.review_count }} reviews · Pickup: {{ provider.pickup_fee }}
     </div>
 
     <div class="mt-4 pt-4 border-t border-gray-100">
@@ -45,16 +45,16 @@
 </template>
 
 <script setup lang="ts">
-import type { LaundryProviderListing, ProviderOffer } from "~/data/customerProviders";
+import type { Provider, ProviderService } from "~/types/supabase";
 
 const props = defineProps<{
-  provider: LaundryProviderListing;
-  offer: ProviderOffer;
+  provider: Provider;
+  offer: ProviderService;
   serviceTitle: string;
   highlighted?: boolean;
 }>();
 
 const shortName = computed(() => props.provider.name.split(" ")[0] ?? props.provider.name);
 
-const bookHref = computed(() => `/order/new?provider=${props.provider.id}&service=${props.offer.serviceId}`);
+const bookHref = computed(() => `/order/new?provider=${props.provider.id}&service=${props.offer.service_id}`);
 </script>
