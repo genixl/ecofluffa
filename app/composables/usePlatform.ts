@@ -7,6 +7,9 @@ import type {
 } from '~/types/supabase'
 import { ORDER_FLOW, STATUS_LABELS } from '~/types/supabase'
 
+// ── Realtime Singleton ─────────────────────────────────────
+let _realtimeChannel: any = null
+
 export function usePlatform() {
   const supabase = useSupabaseClient()
   const { profile } = useAuth()
@@ -53,9 +56,38 @@ export function usePlatform() {
     if (force) loaded.value = false
     await Promise.all([fetchOrders(), fetchActivities(), fetchMessages()])
     loaded.value = true
+    subscribeToRealtime()
+  }
+
+  // ── Realtime ──────────────────────────────────────────────
+  const subscribeToRealtime = () => {
+    if (_realtimeChannel) return // already subscribed
+
+    _realtimeChannel = supabase
+      .channel('platform-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          const updated = payload.new as { id: string; status: string; pickup_time: string; pickup_address: string }
+          const idx = orders.value.findIndex((o) => o.id === updated.id)
+          if (idx !== -1) {
+            orders.value[idx] = { ...orders.value[idx], ...updated }
+          }
+        }
+      )
+      .subscribe()
+  }
+
+  const unsubscribeRealtime = () => {
+    if (_realtimeChannel) {
+      supabase.removeChannel(_realtimeChannel)
+      _realtimeChannel = null
+    }
   }
 
   const resetPlatformData = () => {
+    unsubscribeRealtime()
     orders.value = []
     activities.value = []
     messages.value = []

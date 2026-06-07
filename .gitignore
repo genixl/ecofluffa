@@ -32,3 +32,5 @@ origin.sql
 profile-order-access.sql
 provider-listing.sql
 schema.sql
+fix-contact-rls.sql
+add-customer-addresses.sql

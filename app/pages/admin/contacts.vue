@@ -59,8 +59,13 @@
           />
         </div>
         <div class="flex gap-3">
-          <button @click="submitResponse" class="flex-1 px-6 py-3 rounded-lg font-semibold text-sm" style="background-color: var(--brand-blue); color: white;">
-            Send Response
+          <button 
+            @click="submitResponse" 
+            :disabled="submittingResponse"
+            class="flex-1 px-6 py-3 rounded-lg font-semibold text-sm disabled:opacity-50" 
+            style="background-color: var(--brand-blue); color: white;"
+          >
+            {{ submittingResponse ? 'Sending…' : 'Send Response' }}
           </button>
           <button @click="showModal = false" class="flex-1 px-6 py-3 rounded-lg font-semibold text-sm" style="background-color: var(--bg-subtle); color: var(--text-primary);">
             Cancel
@@ -82,9 +87,11 @@ const {
   getResolvedSubmissions,
   loading,
 } = useContactSubmissions()
+const { success, error: toastError } = useToast()
 
 const activeTab = ref<'new' | 'responded' | 'resolved'>('new')
 const showModal = ref(false)
+const submittingResponse = ref(false)
 const currentId = ref<string | null>(null)
 const responseText = ref('')
 
@@ -106,12 +113,25 @@ const openModal = (id: string) => {
 
 const submitResponse = async () => {
   if (!currentId.value || !responseText.value.trim()) return
-  await respondToSubmission(currentId.value, responseText.value)
-  showModal.value = false
+  submittingResponse.value = true
+  try {
+    await respondToSubmission(currentId.value, responseText.value)
+    showModal.value = false
+    success('Response sent successfully.')
+  } catch {
+    toastError('Failed to send response.')
+  } finally {
+    submittingResponse.value = false
+  }
 }
 
 const resolve = async (id: string) => {
-  await resolveSubmission(id)
+  try {
+    await resolveSubmission(id)
+    success('Message marked as resolved.')
+  } catch {
+    toastError('Failed to resolve message.')
+  }
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })

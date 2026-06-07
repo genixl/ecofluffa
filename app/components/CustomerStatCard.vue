@@ -9,7 +9,7 @@
     <div class="flex items-start justify-between gap-3">
       <div class="flex-1 min-w-0">
         <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--text-muted);">{{ label }}</p>
-        <p class="text-3xl font-black leading-none" style="color: var(--text-primary);">{{ value }}</p>
+        <p class="text-2xl sm:text-3xl font-black leading-none" style="color: var(--text-primary);">{{ value }}</p>
         <p v-if="hint" class="text-xs mt-2" style="color: var(--text-faint);">{{ hint }}</p>
       </div>
       <div v-if="icon" class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style="background-color: var(--brand-blue-light);">{{ icon }}</div>

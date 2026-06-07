@@ -1,70 +1,131 @@
 <template>
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <div class="text-xs font-semibold text-gray-500 mb-4">Order Flow</div>
-    <div v-if="status === 'cancelled'" class="text-sm text-red-700 font-medium">
-      This order was cancelled and will not continue through the flow.
+  <div
+    class="rounded-2xl p-6"
+    style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);"
+  >
+    <div class="text-xs font-bold uppercase tracking-widest mb-6" style="color: var(--text-muted);">
+      Order Progress
     </div>
-    <ol v-else class="flex flex-col md:flex-row md:items-center gap-4 md:gap-0">
+
+    <!-- Cancelled state -->
+    <div v-if="status === 'cancelled'" class="flex items-center gap-4 py-2">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+        style="background-color: #fee2e2; border: 2px solid #ef4444;">
+        <Icon name="mdi:close" size="20" style="color: #ef4444;" />
+      </div>
+      <div>
+        <div class="font-bold text-sm" style="color: #ef4444;">Order Cancelled</div>
+        <div class="text-xs mt-0.5" style="color: var(--text-muted);">This order will not be processed.</div>
+      </div>
+    </div>
+
+    <!-- Active flow -->
+    <ol v-else class="flex flex-col md:flex-row md:items-start gap-0">
       <li
         v-for="(step, index) in flow"
         :key="step"
-        class="flex md:flex-1 md:flex-col md:items-center gap-3 md:gap-2 relative"
+        class="flex md:flex-col md:items-center md:flex-1 relative"
       >
-        <div class="flex items-center gap-3 md:flex-col">
+        <!-- Connector line (horizontal on md, vertical on mobile) -->
+        <div
+          v-if="index < flow.length - 1"
+          class="hidden md:block absolute top-5 left-[calc(50%+20px)] h-0.5 transition-all duration-700"
+          :style="`
+            width: calc(100% - 40px);
+            background-color: ${index < currentIndex ? 'var(--brand-blue)' : 'var(--border-color)'};
+          `"
+        />
+        <!-- Mobile vertical connector -->
+        <div
+          v-if="index < flow.length - 1"
+          class="block md:hidden w-0.5 h-6 mt-1 mb-1 ml-5 transition-all duration-700"
+          :style="`background-color: ${index < currentIndex ? 'var(--brand-blue)' : 'var(--border-color)'};`"
+        />
+
+        <div class="flex md:flex-col md:items-center gap-4 md:gap-2 pb-4 md:pb-0 relative z-10">
+          <!-- Step circle -->
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            :class="stepClass(index)"
+            class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500"
+            :class="index === currentIndex ? 'step-pulse' : ''"
+            :style="stepCircleStyle(index)"
           >
-            {{ index + 1 }}
+            <Icon :name="stepIcon(step)" size="18" style="color: #fff;" />
           </div>
+
+          <!-- Label -->
           <div class="md:text-center">
-            <div class="text-sm font-semibold text-brand-charcoal">
+            <div
+              class="text-sm font-bold transition-colors duration-300"
+              :style="index <= currentIndex
+                ? 'color: var(--text-primary);'
+                : 'color: var(--text-muted);'"
+            >
               {{ labels[step] }}
             </div>
-            <div class="text-xs text-gray-500">
+            <div class="text-xs mt-0.5" style="color: var(--text-muted);">
               {{ stepHint(step, index) }}
             </div>
           </div>
         </div>
-        <div
-          v-if="index < flow.length - 1"
-          class="hidden md:block absolute top-4 left-[calc(50%+1rem)] w-[calc(100%-2rem)] h-0.5"
-          :class="index < currentIndex ? 'bg-brand-blue' : 'bg-gray-200'"
-        />
       </li>
     </ol>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  ORDER_FLOW,
-  STATUS_LABELS,
-  type OrderStatus,
-} from "~/types/supabase";
+import { ORDER_FLOW, STATUS_LABELS, type OrderStatus } from '~/types/supabase'
 
 const props = defineProps<{
-  status: OrderStatus;
-  currentIndex: number;
-}>();
+  status: OrderStatus
+  currentIndex: number
+}>()
 
-const flow = ORDER_FLOW;
-const labels = STATUS_LABELS;
+const flow = ORDER_FLOW
+const labels = STATUS_LABELS
 
-const stepClass = (index: number) => {
-  if (index < props.currentIndex) return "bg-brand-blue text-white";
-  if (index === props.currentIndex) return "bg-brand-orange text-white ring-4 ring-brand-orange/20";
-  return "bg-gray-100 text-gray-500";
-};
+const stepIcon = (step: OrderStatus) => {
+  const icons: Record<OrderStatus, string> = {
+    pending:   'mdi:clock-outline',
+    washing:   'mdi:washing-machine',
+    ready:     'mdi:package-variant-closed',
+    delivered: 'mdi:check-circle',
+    cancelled: 'mdi:close-circle',
+  }
+  return icons[step] ?? 'mdi:circle'
+}
+
+const stepCircleStyle = (index: number) => {
+  if (index < props.currentIndex) {
+    return 'background-color: var(--brand-blue);'
+  }
+  if (index === props.currentIndex) {
+    return 'background-color: var(--brand-orange); box-shadow: 0 0 0 6px rgba(249,115,22,0.18);'
+  }
+  return 'background-color: var(--bg-subtle); border: 2px solid var(--border-color);'
+}
 
 const stepHint = (step: OrderStatus, index: number) => {
-  if (index < props.currentIndex) return "Completed";
+  if (index < props.currentIndex) return 'Done ✓'
   if (index === props.currentIndex) {
-    if (step === "pending") return "Waiting for provider to accept";
-    if (step === "washing") return "Currently being processed";
-    if (step === "ready") return "Ready for delivery";
-    return "Delivered to customer";
+    const hints: Partial<Record<OrderStatus, string>> = {
+      pending:   'Waiting for provider',
+      washing:   'Being processed now',
+      ready:     'Packed & ready',
+      delivered: 'Completed',
+    }
+    return hints[step] ?? ''
   }
-  return "Upcoming";
-};
+  return 'Upcoming'
+}
 </script>
+
+<style scoped>
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(249,115,22,0.45); }
+  70%  { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
+  100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+}
+.step-pulse {
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+</style>

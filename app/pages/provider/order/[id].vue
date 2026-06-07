@@ -1,6 +1,13 @@
 <template>
   <div>
-    <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading order…</div>
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="space-y-6">
+      <SkeletonCard :rows="2" :row-height="36" />
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SkeletonCard v-for="i in 3" :key="i" :rows="3" :row-height="24" class="bg-surface border border-theme rounded-xl p-5 shadow-sm" />
+      </div>
+      <SkeletonCard :rows="5" :row-height="30" />
+    </div>
 
     <template v-else-if="order">
       <div class="flex items-start justify-between gap-6">
@@ -113,6 +120,7 @@ import type { OrderStatus } from '~/types/supabase'
 const route = useRoute()
 const { profile } = useAuth()
 const { getOrderById, updateOrderStatus, getFlowStepIndex, recentActivities, loadAll } = useProviderOrders()
+const { success } = useToast()
 
 const loading = ref(true)
 const routeId = computed(() => String(route.params.id ?? ''))
@@ -133,6 +141,7 @@ const orderActivities = computed(() =>
 const setStatus = async (next: OrderStatus) => {
   if (!order.value) return
   await updateOrderStatus(order.value.id, next)
+  success(`Order status updated to ${next}.`)
 }
 
 const mapsUrl = computed(() => {

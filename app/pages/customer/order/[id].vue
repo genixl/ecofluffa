@@ -1,6 +1,13 @@
 <template>
   <div>
-    <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading order…</div>
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="space-y-6">
+      <SkeletonCard :rows="2" :row-height="36" />
+      <SkeletonCard :rows="4" :row-height="24" />
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SkeletonCard v-for="i in 3" :key="i" :rows="3" :row-height="20" />
+      </div>
+    </div>
 
     <template v-else-if="order">
       <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
@@ -44,7 +51,7 @@
               variant="outline"
               type="button"
               :disabled="order.status !== 'pending'"
-              @click="onCancel"
+              @click="showCancelModal = true"
             />
             <AppButton
               label="Reschedule Pickup"
@@ -106,6 +113,56 @@
     </template>
 
     <div v-else class="text-center py-16 text-muted">Order not found.</div>
+
+    <!-- ── Cancel Confirmation Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showCancelModal"
+          class="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style="background: rgba(0,0,0,0.55);"
+          @click.self="showCancelModal = false"
+        >
+          <div
+            class="rounded-2xl p-8 max-w-md w-full shadow-2xl"
+            style="background-color: var(--bg-surface);"
+          >
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                style="background-color: #fee2e2;">
+                <Icon name="mdi:alert-circle" size="26" style="color: #ef4444;" />
+              </div>
+              <div>
+                <h2 class="text-xl font-bold" style="color: var(--text-primary);">Cancel Order?</h2>
+                <p class="text-sm mt-0.5" style="color: var(--text-muted);">Order {{ order?.id }}</p>
+              </div>
+            </div>
+
+            <p class="text-sm mb-8 leading-relaxed" style="color: var(--text-muted);">
+              Are you sure you want to cancel this order? This action <strong style="color: var(--text-primary);">cannot be undone</strong> and the provider will be notified.
+            </p>
+
+            <div class="flex gap-3">
+              <button
+                :disabled="cancelling"
+                @click="confirmCancel"
+                class="flex-1 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+                style="background-color: #ef4444; color: #fff;"
+              >
+                {{ cancelling ? 'Cancelling…' : 'Yes, Cancel Order' }}
+              </button>
+              <button
+                @click="showCancelModal = false"
+                class="flex-1 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-80"
+                style="background-color: var(--bg-subtle); color: var(--text-primary);"
+              >
+                Keep Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -115,9 +172,12 @@ import type { OrderStatus } from '~/types/supabase'
 const route = useRoute()
 const { userName } = useAuth()
 const { getOrderById, getFlowStepIndex, cancelOrder, rescheduleOrder, recentActivities, loadAll } = useCustomerOrders()
+const { success, error } = useToast()
 
 const loading = ref(true)
 const rescheduleNote = ref('')
+const showCancelModal = ref(false)
+const cancelling = ref(false)
 
 const routeId = computed(() => String(route.params.id ?? ''))
 
@@ -151,17 +211,32 @@ const statusEvents = computed(() => {
   ]
 })
 
-const onCancel = async () => {
+const confirmCancel = async () => {
   if (!order.value) return
-  await cancelOrder(order.value.id)
-  rescheduleNote.value = ''
+  cancelling.value = true
+  try {
+    await cancelOrder(order.value.id)
+    showCancelModal.value = false
+    success('Order cancelled successfully.')
+  } catch {
+    error('Failed to cancel order. Please try again.')
+  } finally {
+    cancelling.value = false
+  }
 }
 
 const onReschedule = async () => {
   if (!order.value) return
   await rescheduleOrder(order.value.id, '16:00')
   rescheduleNote.value = 'Pickup rescheduled to 16:00.'
+  success('Pickup time rescheduled.')
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>
+
+<style scoped>
+.modal-enter-active, .modal-leave-active { transition: all 0.25s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from > div, .modal-leave-to > div { transform: scale(0.95); }
+</style>

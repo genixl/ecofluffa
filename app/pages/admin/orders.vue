@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SectionHeader title="All Orders" subtitle="Every order on the platform — click to view details" />
+    <SectionHeader title="All Orders" subtitle="Every order on the platform click to view details" />
 
     <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading orders…</div>
 
@@ -8,6 +8,7 @@
       No orders yet.
     </div>
 
+    
     <div v-else class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
       <table class="w-full text-left">
         <thead class="bg-subtle border-b border-theme">

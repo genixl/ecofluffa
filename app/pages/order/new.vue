@@ -150,6 +150,7 @@ const { createOrder } = usePlatform()
 const { profile } = useAuth()
 const { providers, providerServices, fetchAll } = useServices()
 const { addresses, mapsUrl, fetchAddresses, defaultAddress } = useAddresses()
+const { success } = useToast()
 
 const loadingData = ref(true)
 const submitting = ref(false)
@@ -230,6 +231,7 @@ const submitOrder = async () => {
 
   submitting.value = false
   if (!id) { formError.value = 'Failed to place order. Please try again.'; return }
+  success('Booking confirmed! Your provider will be notified.')
   router.push(`/customer/order/${id}`)
 }
 

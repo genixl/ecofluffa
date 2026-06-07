@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 const { fetchMyProvider, provider, updateProvider } = useProviderProfile()
+const { success } = useToast()
 
 const businessName = ref('')
 const location = ref('')
@@ -104,6 +105,7 @@ const save = async () => {
     return
   }
   saved.value = true
+  success('Business profile updated.')
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role', 'provider-onboarding'] })

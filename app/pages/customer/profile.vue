@@ -213,6 +213,7 @@ const {
   deleteAddress,
   setDefault,
 } = useAddresses()
+const { success, error: toastError } = useToast()
 
 // ── Profile form ──────────────────────────────────────────────
 const fullName = ref('')
@@ -247,10 +248,12 @@ const save = async () => {
   saving.value = false
   if (error) {
     saveError.value = error.message
+    toastError('Failed to save profile.')
     return
   }
   await fetchProfile(profile.value.id)
   saved.value = true
+  success('Profile updated.')
 }
 
 // ── Address management ────────────────────────────────────────
@@ -274,19 +277,23 @@ const handleAddAddress = async () => {
   addingAddress.value = false
   if (!result) {
     addError.value = 'Failed to save address. Please try again.'
+    toastError('Failed to save address.')
     return
   }
   newLabel.value = ''
   newAddress.value = ''
   newIsDefault.value = false
+  success('Address saved.')
 }
 
 const handleSetDefault = async (id: string) => {
-  await setDefault(id)
+  const ok = await setDefault(id)
+  if (ok) success('Default address updated.')
 }
 
 const handleDelete = async (id: string) => {
-  await deleteAddress(id)
+  const ok = await deleteAddress(id)
+  if (ok) success('Address deleted.')
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
