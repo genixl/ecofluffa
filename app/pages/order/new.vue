@@ -58,7 +58,61 @@
             </select>
           </div>
 
-          <InputField label="Pickup Address" type="text" placeholder="e.g., 12 Green Street, Apt 4" v-model="pickupAddress" />
+          <!-- ── Pickup Address ── -->
+          <div>
+            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">
+              Pickup Address
+            </label>
+
+            <!-- Saved addresses quick-pick -->
+            <div v-if="addresses.length" class="mb-3">
+              <label class="block text-xs font-medium mb-1.5" style="color: var(--text-muted);">Use a saved address</label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="addr in addresses"
+                  :key="addr.id"
+                  type="button"
+                  @click="pickupAddress = addr.address"
+                  class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all"
+                  :style="pickupAddress === addr.address
+                    ? 'background-color: var(--brand-blue); color: #fff; border-color: var(--brand-blue);'
+                    : 'background-color: var(--bg-subtle); color: var(--text-primary); border-color: var(--border-color);'"
+                >
+                  <Icon name="mdi:map-marker" size="13" />
+                  {{ addr.label || addr.address.split(',')[0] }}
+                  <span v-if="addr.is_default" class="opacity-70">(default)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Address input + verify button -->
+            <div class="flex gap-2">
+              <input
+                id="pickup-address-input"
+                v-model="pickupAddress"
+                type="text"
+                placeholder="e.g., 12 Green Street, Apt 4, Nairobi"
+                class="flex-1 px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
+                style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);"
+              />
+              <a
+                v-if="pickupAddress.trim()"
+                :href="mapsUrl(pickupAddress)"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Verify location on Google Maps"
+                class="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-semibold shrink-0 transition-all hover:opacity-90"
+                style="background-color: var(--brand-blue); color: #fff;"
+              >
+                <Icon name="mdi:map-search" size="16" />
+                Verify
+              </a>
+            </div>
+            <p class="text-xs mt-1.5" style="color: var(--text-muted);">
+              Type your address then click <strong>Verify</strong> to confirm it on Google Maps.
+            </p>
+          </div>
+          <!-- ── End Pickup Address ── -->
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputField label="Pickup Date" type="date" v-model="pickupDate" />
@@ -95,6 +149,7 @@ const router = useRouter()
 const { createOrder } = usePlatform()
 const { profile } = useAuth()
 const { providers, providerServices, fetchAll } = useServices()
+const { addresses, mapsUrl, fetchAddresses, defaultAddress } = useAddresses()
 
 const loadingData = ref(true)
 const submitting = ref(false)
@@ -136,9 +191,13 @@ const backLink = computed(() => queryProviderId.value ? `/customer/providers/${q
 const backLabel = computed(() => selectedProvider.value ? `Back to ${selectedProvider.value.name}` : 'Back to Browse')
 
 onMounted(async () => {
-  await fetchAll()
+  await Promise.all([fetchAll(), fetchAddresses()])
   if (!serviceId.value && availableServices.value.length) {
     serviceId.value = availableServices.value[0]?.service_id ?? ''
+  }
+  // Pre-fill default saved address if available
+  if (!pickupAddress.value && defaultAddress.value) {
+    pickupAddress.value = defaultAddress.value.address
   }
   loadingData.value = false
 })
