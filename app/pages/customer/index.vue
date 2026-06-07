@@ -14,6 +14,17 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <div class="theme-card rounded-xl p-6">
+        <div class="font-bold text-lg mb-1" style="color: var(--brand-blue);">Browse Providers</div>
+        <div class="text-muted text-sm mb-4">Explore verified laundry service providers and compare their offerings.</div>
+        <NuxtLink
+          to="/customer/browse"
+          class="inline-block bg-brand-orange text-brand-white px-6 py-3 font-semibold text-sm rounded-lg hover:shadow-lg hover:bg-opacity-90 transition-all duration-200"
+        >
+          Browse All Providers
+        </NuxtLink>
+      </div>
+
+      <div class="theme-card rounded-xl p-6">
         <div class="font-bold text-lg mb-1" style="color: var(--brand-blue);">Search Services</div>
         <div class="text-muted text-sm mb-4">Find wash, iron, dry clean, and specialty laundry options.</div>
         <InputField label="Service keyword" type="text" placeholder="e.g. ironing, dry cleaning" v-model="serviceSearch" />
@@ -60,8 +71,21 @@
         />
       </div>
       <div>
-        <SectionHeader title="Live Activity" subtitle="Updates from providers & platform" />
-        <ActivityFeed :items="recentActivities.slice(0, 6)" order-link-prefix="/customer/order" />
+        <div
+          class="cursor-pointer select-none"
+          @click="showLiveActivity = !showLiveActivity"
+        >
+          <SectionHeader title="Live Activity" subtitle="Updates from providers & platform" />
+          <div class="text-muted text-xs mt-1">
+            {{ showLiveActivity ? '▼ Hide' : '▶ Show' }} activity feed
+          </div>
+        </div>
+        <ActivityFeed
+          v-if="showLiveActivity"
+          :items="recentActivities.slice(0, 10)"
+          order-link-prefix="/customer/order"
+          class="mt-4"
+        />
       </div>
     </div>
   </div>
@@ -76,6 +100,7 @@ const serviceSearch = ref('')
 const trackOrderId = ref('')
 const trackError = ref('')
 const loadingData = ref(true)
+const showLiveActivity = ref(false)
 
 onMounted(async () => {
   await loadAll()

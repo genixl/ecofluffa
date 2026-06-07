@@ -132,7 +132,7 @@ const pickupDate = ref('')
 const pickupTime = ref('')
 const customerPhone = ref(profile.value?.phone ?? '')
 
-const backLink = computed(() => queryProviderId.value ? `/providers/${queryProviderId.value}` : '/browse')
+const backLink = computed(() => queryProviderId.value ? `/customer/providers/${queryProviderId.value}` : '/customer/browse')
 const backLabel = computed(() => selectedProvider.value ? `Back to ${selectedProvider.value.name}` : 'Back to Browse')
 
 onMounted(async () => {

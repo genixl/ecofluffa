@@ -28,7 +28,7 @@
               label="Browse Providers"
               variant="secondary"
               type="button"
-              @click="$router.push('/browse')"
+              @click="$router.push('/customer/browse')"
             />
           </div>
         </div>

@@ -164,6 +164,7 @@ const navItems = computed<NavItem[]>(() => {
       ? [
           { to: '/customer', label: 'Dashboard', icon: 'mdi:home' },
           { to: '/customer/services', label: 'Find Services', icon: 'mdi:magnify' },
+          { to: '/customer/browse', label: 'Browse Providers', icon: 'mdi:store-search' },
           { to: '/customer/orders', label: 'My Orders', icon: 'mdi:package' },
           { to: '/customer/profile', label: 'Profile', icon: 'mdi:account' },
         ]

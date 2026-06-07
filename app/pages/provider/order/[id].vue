@@ -56,7 +56,7 @@
           other-party-label="customer"
         />
         <div>
-          <SectionHeader title="Platform activity" subtitle="Visible to customer & admin" />
+          <SectionHeader title="Platform activity" />
           <ActivityFeed :items="orderActivities" order-link-prefix="/provider/order" />
         </div>
       </div>

@@ -37,8 +37,21 @@
           </div>
         </div>
         <div>
-          <SectionHeader title="Platform Activity" subtitle="Live updates from all roles" />
-          <ActivityFeed :items="recentActivities.slice(0, 5)" order-link-prefix="/provider/order" />
+          <div
+            class="cursor-pointer select-none"
+            @click="showPlatformActivity = !showPlatformActivity"
+          >
+            <SectionHeader title="Platform Activity" subtitle="Live updates from all roles" />
+            <div class="text-muted text-xs mt-1">
+              {{ showPlatformActivity ? '▼ Hide' : '▶ Show' }} activity feed
+            </div>
+          </div>
+          <ActivityFeed
+            v-if="showPlatformActivity"
+            :items="recentActivities.slice(0, 10)"
+            order-link-prefix="/provider/order"
+            class="mt-4"
+          />
         </div>
       </div>
     </template>
@@ -48,6 +61,7 @@
 <script setup lang="ts">
 const { stats, incomingOrders, recentActivities, loadAll } = useProviderOrders()
 const loading = ref(true)
+const showPlatformActivity = ref(false)
 
 onMounted(async () => {
   await loadAll()

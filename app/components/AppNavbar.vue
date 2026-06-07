@@ -192,15 +192,12 @@ const navLinks = computed(() => {
   }
   if (role.value === 'customer') {
     return [
-      { to: '/customer/services', label: 'Find Services' },
-      { to: '/browse', label: 'Browse Providers' },
       { to: '/about', label: 'About Us' },
       { to: '/contact', label: 'Contact Support' },
     ]
   }
   if (role.value === 'provider') {
     return [
-      { to: '/provider/services', label: 'My Services' },
       { to: '/about', label: 'About Us' },
       { to: '/contact', label: 'Contact Support' },
     ]
