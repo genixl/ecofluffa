@@ -50,5 +50,7 @@ export function useCustomerOrders() {
     addMessage: platform.addMessage,
     getMessagesForOrder: platform.getMessagesForOrder,
     loadAll: platform.loadAll,
+    getRatingForOrder: platform.getRatingForOrder,
+    submitRating: platform.submitRating,
   }
 }

@@ -20,9 +20,30 @@
         <div class="px-5 py-5">
           <div class="flex items-center gap-3 mb-1">
             <Icon :name="roleEmoji" size="24" style="color: var(--brand-blue);" />
-            <div>
+            <div class="flex-1 min-w-0">
               <div class="font-bold text-sm" style="color: var(--brand-blue);">{{ roleLabel }}</div>
               <div class="text-xs" style="color: var(--text-muted);">Dashboard</div>
+            </div>
+            <!-- Bell notification button -->
+            <div class="relative" ref="bellContainerDesktop">
+              <button
+                @click="bellOpen = !bellOpen"
+                class="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
+                style="background-color: var(--bg-subtle);"
+                aria-label="Notifications"
+              >
+                <Icon name="mdi:bell-outline" size="20" style="color: var(--text-primary);" />
+                <span
+                  v-if="unreadCount > 0"
+                  class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-black text-white"
+                  style="background-color: #ef4444; font-size: 10px; min-width: 18px;"
+                >{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+              </button>
+              <NotificationPanel
+                :open="bellOpen"
+                :link-prefix="notifLinkPrefix"
+                @close="bellOpen = false"
+              />
             </div>
           </div>
         </div>
@@ -99,8 +120,29 @@
             <span class="block w-4 h-0.5" style="background-color: currentColor;"></span>
           </button>
           <span class="font-semibold text-sm" style="color: var(--text-primary);">{{ roleLabel }}</span>
-          <div class="ml-auto flex items-center gap-2">
+          <div class="ml-auto flex items-center gap-3">
             <span class="text-xs px-2 py-1 rounded-full font-medium" style="background-color: var(--brand-blue-light); color: var(--brand-blue);">{{ roleLabel }}</span>
+            <!-- Mobile bell button -->
+            <div class="relative" ref="bellContainerMobile">
+              <button
+                @click="bellOpen = !bellOpen"
+                class="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
+                style="background-color: var(--bg-subtle);"
+                aria-label="Notifications"
+              >
+                <Icon name="mdi:bell-outline" size="20" style="color: var(--text-primary);" />
+                <span
+                  v-if="unreadCount > 0"
+                  class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-black text-white"
+                  style="background-color: #ef4444; font-size: 10px; min-width: 18px;"
+                >{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+              </button>
+              <NotificationPanel
+                :open="bellOpen"
+                :link-prefix="notifLinkPrefix"
+                @close="bellOpen = false"
+              />
+            </div>
           </div>
         </div>
 
@@ -123,6 +165,22 @@ const { needsOnboarding, fetchMyProvider } = useProviderProfile()
 const { init: initNotifPermission, requestPermission, isDefault: notifIsDefault, isGranted: notifIsGranted } = useWebNotifications()
 
 const sidebarOpen = ref(false)
+const bellOpen = ref(false)
+const bellContainerDesktop = ref<HTMLElement | null>(null)
+const bellContainerMobile = ref<HTMLElement | null>(null)
+
+const { unreadCount } = useInAppNotifications()
+
+// Close bell panel when clicking outside
+const handleOutsideClick = (e: MouseEvent) => {
+  const target = e.target as Node
+  const outsideDesktop = !bellContainerDesktop.value?.contains(target)
+  const outsideMobile = !bellContainerMobile.value?.contains(target)
+  if (bellOpen.value && outsideDesktop && outsideMobile) bellOpen.value = false
+}
+
+onMounted(() => document.addEventListener('click', handleOutsideClick, true))
+onUnmounted(() => document.removeEventListener('click', handleOutsideClick, true))
 
 watch(() => route.path, () => { sidebarOpen.value = false })
 
@@ -179,6 +237,12 @@ const roleLabel = computed(() => {
   if (dashboardRole.value === 'provider') return 'Provider'
   if (dashboardRole.value === 'admin') return 'Admin'
   return 'Dashboard'
+})
+
+const notifLinkPrefix = computed(() => {
+  if (dashboardRole.value === 'customer') return '/customer/order'
+  if (dashboardRole.value === 'provider') return '/provider/order'
+  return '/admin/orders'
 })
 
 const roleEmoji = computed(() => {

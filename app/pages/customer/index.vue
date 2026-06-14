@@ -70,22 +70,57 @@
           :to="`/customer/order/${o.id}`"
         />
       </div>
+
+      <!-- My Order Updates — customer-only, status + messages only -->
       <div>
-        <div
-          class="cursor-pointer select-none"
-          @click="showLiveActivity = !showLiveActivity"
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="font-bold text-base" style="color: var(--text-primary);">My Order Updates</div>
+            <div class="text-xs mt-0.5" style="color: var(--text-muted);">Status changes &amp; messages on your orders</div>
+          </div>
+          <span
+            v-if="orderUpdates.length > 0"
+            class="text-xs font-bold px-2 py-0.5 rounded-full"
+            style="background-color: var(--brand-blue-light); color: var(--brand-blue);"
+          >{{ orderUpdates.length }}</span>
+        </div>
+
+        <div v-if="orderUpdates.length === 0"
+          class="rounded-xl p-6 text-center"
+          style="background-color: var(--bg-surface); border: 1px solid var(--border-color);"
         >
-          <SectionHeader title="Live Activity" subtitle="Updates from providers & platform" />
-          <div class="text-muted text-xs mt-1">
-            {{ showLiveActivity ? '▼ Hide' : '▶ Show' }} activity feed
+          <Icon name="mdi:bell-check-outline" size="32" style="color: var(--text-muted);" />
+          <div class="text-sm mt-2" style="color: var(--text-muted);">No updates yet on your orders.</div>
+        </div>
+
+        <div v-else class="flex flex-col gap-2">
+          <div
+            v-for="item in orderUpdates.slice(0, 8)"
+            :key="item.id"
+            class="rounded-xl px-4 py-3 flex items-start gap-3 transition-all hover:shadow-sm"
+            style="background-color: var(--bg-surface); border: 1px solid var(--border-color);"
+          >
+            <div
+              class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+              :style="item.type === 'message'
+                ? 'background-color: #fef3c7; color: #92400e;'
+                : 'background-color: #d1fae5; color: #065f46;'" 
+            >
+              <Icon :name="item.type === 'message' ? 'mdi:chat-outline' : 'mdi:refresh'" size="14" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold" style="color: var(--text-primary);">{{ item.title }}</div>
+              <div class="text-xs mt-0.5 leading-relaxed" style="color: var(--text-muted);">{{ item.detail }}</div>
+              <NuxtLink
+                v-if="item.orderId"
+                :to="`/customer/order/${item.orderId}`"
+                class="text-xs font-semibold mt-1 inline-block hover:underline"
+                style="color: var(--brand-blue);"
+              >{{ item.orderId }} →</NuxtLink>
+            </div>
+            <span class="text-xs shrink-0" style="color: var(--text-faint);">{{ formatTime(item.at) }}</span>
           </div>
         </div>
-        <ActivityFeed
-          v-if="showLiveActivity"
-          :items="recentActivities.slice(0, 10)"
-          order-link-prefix="/customer/order"
-          class="mt-4"
-        />
       </div>
     </div>
   </div>
@@ -100,7 +135,6 @@ const serviceSearch = ref('')
 const trackOrderId = ref('')
 const trackError = ref('')
 const loadingData = ref(true)
-const showLiveActivity = ref(false)
 
 onMounted(async () => {
   await loadAll()
@@ -112,6 +146,30 @@ const servicesLink = computed(() => {
   const q = serviceSearch.value.trim()
   return q ? `/customer/services?q=${encodeURIComponent(q)}` : '/customer/services'
 })
+
+/** Customer-scoped activities: only status changes and messages */
+const orderUpdates = computed(() =>
+  recentActivities.value
+    .filter((a) => a.type === 'status' || a.type === 'message')
+    .slice(0, 8)
+    .map((a) => ({
+      id: a.id,
+      orderId: a.order_id,
+      type: a.type,
+      title: a.title,
+      detail: a.detail,
+      at: a.created_at,
+    }))
+)
+
+const formatTime = (iso: string) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }).format(new Date(iso))
+  } catch { return iso }
+}
 
 const trackOrder = () => {
   trackError.value = ''

@@ -93,7 +93,7 @@
         </div>
 
         <div v-if="myServices.length === 0" class="text-sm text-muted py-6 text-center">
-          No services yet — add at least one to publish.
+          No services added yet, add at least one to publish.
         </div>
         <ul v-else class="space-y-3">
           <li

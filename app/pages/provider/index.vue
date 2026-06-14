@@ -65,21 +65,65 @@
           </div>
         </div>
         <div>
-          <div
-            class="cursor-pointer select-none"
-            @click="showPlatformActivity = !showPlatformActivity"
-          >
-            <SectionHeader title="Platform Activity" subtitle="Live updates from all roles" />
-            <div class="text-muted text-xs mt-1">
-              {{ showPlatformActivity ? '▼ Hide' : '▶ Show' }} activity feed
+          <!-- Incoming Activity header with summaries -->
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="font-bold text-base" style="color: var(--text-primary);">Incoming Activity</div>
+              <div class="text-xs mt-0.5" style="color: var(--text-muted);">All events across your orders</div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span
+                v-if="newMessagesToday > 0"
+                class="text-xs font-bold px-2 py-0.5 rounded-full"
+                style="background-color: #fef3c7; color: #92400e;"
+              >{{ newMessagesToday }} new msg{{ newMessagesToday > 1 ? 's' : '' }}</span>
+              <span
+                v-if="ordersNeedingAction > 0"
+                class="text-xs font-bold px-2 py-0.5 rounded-full"
+                style="background-color: #ffedd5; color: #ea580c;"
+              >{{ ordersNeedingAction }} need action</span>
             </div>
           </div>
-          <ActivityFeed
-            v-if="showPlatformActivity"
-            :items="recentActivities.slice(0, 10)"
-            order-link-prefix="/provider/order"
-            class="mt-4"
-          />
+
+          <div v-if="recentActivities.length === 0"
+            class="rounded-xl p-6 text-center"
+            style="background-color: var(--bg-surface); border: 1px solid var(--border-color);"
+          >
+            <Icon name="mdi:inbox-outline" size="32" style="color: var(--text-muted);" />
+            <div class="text-sm mt-2" style="color: var(--text-muted);">No activity yet on your orders.</div>
+          </div>
+
+          <div v-else class="flex flex-col gap-2">
+            <div
+              v-for="item in providerActivity.slice(0, 10)"
+              :key="item.id"
+              class="rounded-xl px-4 py-3 flex items-start gap-3 transition-all hover:shadow-sm"
+              style="background-color: var(--bg-surface); border: 1px solid var(--border-color);"
+            >
+              <div
+                class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                :style="activityDotStyle(item.type)"
+              >
+                <Icon :name="activityIcon(item.type)" size="14" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold" style="color: var(--text-primary);">{{ item.title }}</span>
+                  <span class="text-xs shrink-0" style="color: var(--text-faint);">{{ formatTime(item.at) }}</span>
+                </div>
+                <div class="text-xs mt-0.5" style="color: var(--text-muted);">{{ item.detail }}</div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span v-if="item.actorName" class="text-xs font-medium" style="color: var(--text-faint);">by {{ item.actorName }}</span>
+                  <NuxtLink
+                    v-if="item.orderId"
+                    :to="`/provider/order/${item.orderId}`"
+                    class="text-xs font-semibold hover:underline"
+                    style="color: var(--brand-blue);"
+                  >{{ item.orderId }} →</NuxtLink>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -89,7 +133,6 @@
 <script setup lang="ts">
 const { stats, incomingOrders, recentActivities, orders, loadAll } = useProviderOrders()
 const loading = ref(true)
-const showPlatformActivity = ref(false)
 
 onMounted(async () => {
   await loadAll()
@@ -108,6 +151,57 @@ const getUrgency = (o: { pickup_date: string; status: string }) => {
 const todayOrders = computed(() =>
   incomingOrders.value.filter(o => o.pickup_date === today)
 )
+
+/** Count orders awaiting provider action */
+const ordersNeedingAction = computed(() =>
+  incomingOrders.value.filter(o => o.status === 'pending').length
+)
+
+/** New messages today for provider */
+const newMessagesToday = computed(() => {
+  const todayPrefix = today
+  return recentActivities.value.filter(
+    (a) => a.type === 'message' && a.created_at.startsWith(todayPrefix)
+  ).length
+})
+
+/** All provider activities with display shape */
+const providerActivity = computed(() =>
+  recentActivities.value.slice(0, 10).map((a) => ({
+    id: a.id,
+    orderId: a.order_id,
+    type: a.type,
+    title: a.title,
+    detail: a.detail,
+    actorName: a.actor_name,
+    at: a.created_at,
+  }))
+)
+
+const activityIcon = (type: string) => {
+  if (type === 'booking')  return 'mdi:clipboard-list-outline'
+  if (type === 'status')   return 'mdi:refresh'
+  if (type === 'message')  return 'mdi:chat-outline'
+  if (type === 'admin')    return 'mdi:shield-account'
+  return 'mdi:pin'
+}
+
+const activityDotStyle = (type: string) => {
+  if (type === 'booking')  return 'background-color: var(--brand-blue-light); color: var(--brand-blue);'
+  if (type === 'status')   return 'background-color: #d1fae5; color: #065f46;'
+  if (type === 'message')  return 'background-color: #fef3c7; color: #92400e;'
+  if (type === 'admin')    return 'background-color: #fce7f3; color: #9d174d;'
+  return 'background-color: var(--bg-subtle); color: var(--text-muted);'
+}
+
+const formatTime = (iso: string) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }).format(new Date(iso))
+  } catch { return iso }
+}
 
 const revenueEstimate = computed(() => {
   const delivered = orders.value.filter(o => o.status === 'delivered')

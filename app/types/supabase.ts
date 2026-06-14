@@ -97,6 +97,16 @@ export interface OrderActivity {
   created_at: string
 }
 
+export interface Rating {
+  id: string
+  order_id: string
+  provider_id: string
+  customer_id: string
+  score: number        // 1–5
+  comment: string
+  created_at: string
+}
+
 export interface ContactSubmission {
   id: string
   name: string

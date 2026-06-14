@@ -37,11 +37,8 @@
         </div>
         <div class="bg-surface border border-theme rounded-xl p-5 shadow-sm">
           <div class="text-xs font-semibold text-muted mb-1">Contact Provider</div>
-          <div class="text-primary text-sm">{{ order.provider?.phone }}</div>
-          <div class="mt-3 flex gap-2">
-            <AppButton label="Call" variant="outline" type="button" />
-            <AppButton label="Message" variant="outline" type="button" />
-          </div>
+          <div class="text-primary">{{ order.provider?.phone }}</div>
+          <div class="text-muted text-xs mt-1">Call or text the provider directly to confirm pickup.</div>
         </div>
         <div class="bg-surface border border-theme rounded-xl p-5 shadow-sm">
           <div class="text-xs font-semibold text-muted mb-1">Manage Order</div>
@@ -58,10 +55,9 @@
               variant="outline"
               type="button"
               :disabled="order.status === 'delivered' || order.status === 'cancelled'"
-              @click="onReschedule"
+              @click="showRescheduleModal = true"
             />
           </div>
-          <div v-if="rescheduleNote" class="text-xs text-brand-blue mt-2">{{ rescheduleNote }}</div>
           <div class="text-xs text-muted mt-2">Cancellation is available while the order is still pending.</div>
         </div>
       </div>
@@ -105,6 +101,42 @@
         </div>
       </div>
 
+      <!-- Rating section — only when delivered and not yet rated -->
+      <div
+        v-if="order.status === 'delivered' && !existingRating"
+        class="mt-8 rounded-2xl p-6 flex items-center justify-between gap-4"
+        style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b;"
+      >
+        <div>
+          <div class="font-bold" style="color: #92400e;">How was your laundry experience?</div>
+          <div class="text-sm mt-0.5" style="color: #b45309;">Rate {{ order.provider?.name }} to help other customers.</div>
+        </div>
+        <button
+          @click="showRatingModal = true"
+          class="shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+          style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;"
+        >
+          Rate Service ★
+        </button>
+      </div>
+
+      <!-- Already rated banner -->
+      <div
+        v-else-if="order.status === 'delivered' && existingRating"
+        class="mt-8 rounded-2xl p-4 flex items-center gap-3"
+        style="background-color: #d1fae5; border: 1px solid #10b981;"
+      >
+        <Icon name="mdi:star" size="20" style="color: #f59e0b;" />
+        <div>
+          <span class="font-semibold text-sm" style="color: #065f46;">You rated this service</span>
+          <span class="ml-2">
+            <span v-for="s in 5" :key="s">
+              <Icon name="mdi:star" size="14" :style="s <= existingRating.score ? 'color: #f59e0b;' : 'color: #d1fae5;'" />
+            </span>
+          </span>
+        </div>
+      </div>
+
       <div class="mt-8">
         <NuxtLink to="/customer/orders" class="text-brand-blue font-semibold text-sm hover:underline">
           ← Back to all orders
@@ -113,6 +145,57 @@
     </template>
 
     <div v-else class="text-center py-16 text-muted">Order not found.</div>
+
+    <!-- ── Reschedule Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showRescheduleModal"
+          class="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style="background: rgba(0,0,0,0.55);"
+          @click.self="showRescheduleModal = false"
+        >
+          <div
+            class="rounded-2xl p-8 max-w-sm w-full shadow-2xl"
+            style="background-color: var(--bg-surface);"
+          >
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background-color: var(--brand-blue-light);">
+                <Icon name="mdi:clock-edit-outline" size="22" style="color: var(--brand-blue);" />
+              </div>
+              <div>
+                <h2 class="text-lg font-bold" style="color: var(--text-primary);">Reschedule Pickup</h2>
+                <p class="text-xs" style="color: var(--text-muted);">Order {{ order?.id }}</p>
+              </div>
+            </div>
+            <label class="text-sm font-semibold mb-2 block" style="color: var(--text-primary);">New pickup time</label>
+            <input
+              v-model="newPickupTime"
+              type="time"
+              class="w-full border-2 rounded-xl px-4 py-2.5 text-sm mb-6 focus:outline-none focus:border-brand-blue"
+              style="border-color: var(--border-color); background-color: var(--bg-subtle); color: var(--text-primary);"
+            />
+            <div class="flex gap-3">
+              <button
+                :disabled="!newPickupTime || rescheduling"
+                @click="confirmReschedule"
+                class="flex-1 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40"
+                style="background-color: var(--brand-blue); color: #fff;"
+              >
+                {{ rescheduling ? 'Saving…' : 'Confirm' }}
+              </button>
+              <button
+                @click="showRescheduleModal = false"
+                class="flex-1 py-3 rounded-xl text-sm font-bold"
+                style="background-color: var(--bg-subtle); color: var(--text-primary);"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- ── Cancel Confirmation Modal ── -->
     <Teleport to="body">
@@ -163,6 +246,16 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ── Rating Modal ── -->
+    <RatingModal
+      v-if="order"
+      v-model="showRatingModal"
+      :order-id="order.id"
+      :provider-id="order.provider_id"
+      :provider-name="order.provider?.name ?? 'Provider'"
+      @submitted="loadAll(true)"
+    />
   </div>
 </template>
 
@@ -171,13 +264,16 @@ import type { OrderStatus } from '~/types/supabase'
 
 const route = useRoute()
 const { userName } = useAuth()
-const { getOrderById, getFlowStepIndex, cancelOrder, rescheduleOrder, recentActivities, loadAll } = useCustomerOrders()
+const { getOrderById, getFlowStepIndex, cancelOrder, rescheduleOrder, recentActivities, loadAll, getRatingForOrder } = useCustomerOrders()
 const { success, error } = useToast()
 
 const loading = ref(true)
-const rescheduleNote = ref('')
 const showCancelModal = ref(false)
+const showRescheduleModal = ref(false)
+const showRatingModal = ref(false)
 const cancelling = ref(false)
+const rescheduling = ref(false)
+const newPickupTime = ref('')
 
 const routeId = computed(() => String(route.params.id ?? ''))
 
@@ -188,6 +284,7 @@ onMounted(async () => {
 
 const order = computed(() => getOrderById(routeId.value))
 const flowIndex = computed(() => order.value ? getFlowStepIndex(order.value.status) : -1)
+const existingRating = computed(() => order.value ? getRatingForOrder(order.value.id) : null)
 
 const orderActivities = computed(() =>
   recentActivities.value.filter((a) => a.order_id === routeId.value)
@@ -225,11 +322,19 @@ const confirmCancel = async () => {
   }
 }
 
-const onReschedule = async () => {
-  if (!order.value) return
-  await rescheduleOrder(order.value.id, '16:00')
-  rescheduleNote.value = 'Pickup rescheduled to 16:00.'
-  success('Pickup time rescheduled.')
+const confirmReschedule = async () => {
+  if (!order.value || !newPickupTime.value) return
+  rescheduling.value = true
+  try {
+    await rescheduleOrder(order.value.id, newPickupTime.value)
+    showRescheduleModal.value = false
+    success(`Pickup rescheduled to ${newPickupTime.value}.`)
+    newPickupTime.value = ''
+  } catch {
+    error('Failed to reschedule. Please try again.')
+  } finally {
+    rescheduling.value = false
+  }
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })

@@ -3,6 +3,7 @@ import type {
   OrderActivity,
   OrderMessage,
   OrderStatus,
+  Rating,
   UserRole,
 } from '~/types/supabase'
 import { ORDER_FLOW, STATUS_LABELS } from '~/types/supabase'
@@ -18,6 +19,7 @@ export function usePlatform() {
   const orders = useState<Order[]>('platform-orders', () => [])
   const activities = useState<OrderActivity[]>('platform-activities', () => [])
   const messages = useState<OrderMessage[]>('platform-messages', () => [])
+  const ratings = useState<Rating[]>('platform-ratings', () => [])
   const loaded = useState<boolean>('platform-loaded', () => false)
 
   // ── Fetch helpers ─────────────────────────────────────────
@@ -51,10 +53,17 @@ export function usePlatform() {
     if (!error && data) messages.value = data as OrderMessage[]
   }
 
+  const fetchRatings = async () => {
+    const { data, error } = await supabase
+      .from('ratings')
+      .select('*')
+    if (!error && data) ratings.value = data as Rating[]
+  }
+
   const loadAll = async (force = false) => {
     if (loaded.value && !force) return
     if (force) loaded.value = false
-    await Promise.all([fetchOrders(), fetchActivities(), fetchMessages()])
+    await Promise.all([fetchOrders(), fetchActivities(), fetchMessages(), fetchRatings()])
     loaded.value = true
     subscribeToRealtime()
   }
@@ -95,6 +104,7 @@ export function usePlatform() {
           // Providers update → customer should see toast (and vice versa)
           const { show } = useToast()
           const { notify } = useWebNotifications()
+          const { addNotification } = useInAppNotifications()
           const label = STATUS_LABELS[newStatus] ?? newStatus
           const orderId = updated.id
 
@@ -104,18 +114,55 @@ export function usePlatform() {
             const msg = `Order ${orderId} is now ${label}`
             show(msg, type, 5000)
             notify('EcoFluffa - Order Update', { body: msg, tag: `order-status-${orderId}` })
+            addNotification({
+              type: 'order_update',
+              title: 'Order Status Updated',
+              body: msg,
+              orderId,
+              role: 'customer',
+              createdAt: new Date().toISOString(),
+            })
           } else if (currentRole === 'provider') {
             // Provider sees customer-triggered changes (e.g. cancellation)
             if (newStatus === 'cancelled') {
               const msg = `Order ${orderId} was cancelled by the customer`
               show(msg, 'warning', 5000)
               notify('EcoFluffa - Order Cancelled', { body: msg, tag: `order-status-${orderId}` })
+              addNotification({
+                type: 'order_update',
+                title: 'Order Cancelled',
+                body: msg,
+                orderId,
+                role: 'provider',
+                createdAt: new Date().toISOString(),
+              })
+            } else if (newStatus === 'pending') {
+              // New order assigned to provider
+              const msg = `New order ${orderId} is waiting for your acceptance`
+              show(msg, 'info', 5000)
+              notify('EcoFluffa - New Order', { body: msg, tag: `order-status-${orderId}` })
+              addNotification({
+                type: 'order_update',
+                title: 'New Incoming Order',
+                body: msg,
+                orderId,
+                role: 'provider',
+                createdAt: new Date().toISOString(),
+              })
             }
           } else if (currentRole === 'admin') {
             // Admin sees all status changes
             const msg = `Order ${orderId}: ${STATUS_LABELS[oldStatus] ?? oldStatus} to ${label}`
             show(msg, 'info', 4000)
             notify('EcoFluffa - Status Change', { body: msg, tag: `order-status-${orderId}` })
+            addNotification({
+              type: 'order_update',
+              title: 'Order Status Changed',
+              body: msg,
+              orderId,
+              role: 'admin',
+              createdAt: new Date().toISOString(),
+            })
           }
         }
       )
@@ -137,6 +184,7 @@ export function usePlatform() {
 
           const { show } = useToast()
           const { notify } = useWebNotifications()
+          const { addNotification } = useInAppNotifications()
           const preview = msg.body.length > 60 ? msg.body.slice(0, 60) + '...' : msg.body
           const senderLabel = msg.from_role.charAt(0).toUpperCase() + msg.from_role.slice(1)
           const toastMsg = `New message from ${senderLabel} (Order ${msg.order_id}): "${preview}"`
@@ -144,6 +192,14 @@ export function usePlatform() {
           notify(`EcoFluffa - New message from ${senderLabel}`, {
             body: `Order ${msg.order_id}: "${preview}"`,
             tag: `message-${msg.order_id}`,
+          })
+          addNotification({
+            type: 'new_message',
+            title: `New message from ${senderLabel}`,
+            body: `Order ${msg.order_id}: "${preview}"`,
+            orderId: msg.order_id,
+            role: currentRole as 'customer' | 'provider' | 'admin',
+            createdAt: new Date().toISOString(),
           })
         }
       )
@@ -162,7 +218,50 @@ export function usePlatform() {
     orders.value = []
     activities.value = []
     messages.value = []
+    ratings.value = []
     loaded.value = false
+  }
+
+  // ── Ratings ───────────────────────────────────────────────
+  const getRatingForOrder = (orderId: string): Rating | null =>
+    ratings.value.find((r) => r.order_id === orderId) ?? null
+
+  const submitRating = async (
+    orderId: string,
+    providerId: string,
+    score: number,
+    comment: string
+  ): Promise<boolean> => {
+    if (!profile.value) return false
+    const { data, error } = await supabase
+      .from('ratings')
+      .insert({
+        order_id: orderId,
+        provider_id: providerId,
+        customer_id: profile.value.id,
+        score,
+        comment,
+      })
+      .select()
+      .single()
+    if (error) return false
+    if (data) ratings.value.push(data as Rating)
+    // Refresh provider list so rating badge updates
+    await supabase
+      .from('providers')
+      .select('id, rating, review_count')
+      .eq('id', providerId)
+      .single()
+      .then(({ data: p }) => {
+        if (p) {
+          const po = orders.value.find((o) => o.provider_id === providerId)
+          if (po?.provider) {
+            po.provider.rating = (p as { rating: number }).rating
+            po.provider.review_count = (p as { review_count: number }).review_count
+          }
+        }
+      })
+    return true
   }
 
   // ── Order helpers ─────────────────────────────────────────
@@ -426,6 +525,7 @@ export function usePlatform() {
     orders,
     activities,
     messages,
+    ratings,
     loaded,
     statusLabels: STATUS_LABELS,
     orderFlow: ORDER_FLOW,
@@ -434,6 +534,7 @@ export function usePlatform() {
     fetchOrders,
     fetchActivities,
     fetchMessages,
+    fetchRatings,
     getOrderById,
     updateOrderStatus,
     addMessage,
@@ -448,5 +549,7 @@ export function usePlatform() {
     customerStats,
     providerStats,
     providerIncomingOrders,
+    getRatingForOrder,
+    submitRating,
   }
 }
