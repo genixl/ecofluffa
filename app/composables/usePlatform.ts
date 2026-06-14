@@ -63,17 +63,88 @@ export function usePlatform() {
   const subscribeToRealtime = () => {
     if (_realtimeChannel) return // already subscribed
 
+    const currentRole = profile.value?.role ?? null
+
     _realtimeChannel = supabase
       .channel('platform-orders-realtime')
+      // ── Order status changes ──────────────────────────────
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders' },
         (payload) => {
-          const updated = payload.new as { id: string; status: string; pickup_time: string; pickup_address: string }
+          const updated = payload.new as {
+            id: string
+            status: string
+            pickup_time: string
+            pickup_address: string
+          }
+          const old = payload.old as { status?: string }
+
+          // Patch state
           const idx = orders.value.findIndex((o) => o.id === updated.id)
           if (idx !== -1) {
             orders.value[idx] = { ...orders.value[idx], ...updated }
           }
+
+          // Show toast only when status actually changed
+          const newStatus = updated.status as OrderStatus
+          const oldStatus = old?.status as OrderStatus | undefined
+          if (!oldStatus || newStatus === oldStatus) return
+
+          // Determine if this update was made by someone else
+          // Providers update → customer should see toast (and vice versa)
+          const { show } = useToast()
+          const { notify } = useWebNotifications()
+          const label = STATUS_LABELS[newStatus] ?? newStatus
+          const orderId = updated.id
+
+          if (currentRole === 'customer') {
+            // Customer sees status updates from providers
+            const type = newStatus === 'cancelled' ? 'warning' : newStatus === 'delivered' ? 'success' : 'info'
+            const msg = `Order ${orderId} is now ${label}`
+            show(msg, type, 5000)
+            notify('EcoFluffa - Order Update', { body: msg, tag: `order-status-${orderId}` })
+          } else if (currentRole === 'provider') {
+            // Provider sees customer-triggered changes (e.g. cancellation)
+            if (newStatus === 'cancelled') {
+              const msg = `Order ${orderId} was cancelled by the customer`
+              show(msg, 'warning', 5000)
+              notify('EcoFluffa - Order Cancelled', { body: msg, tag: `order-status-${orderId}` })
+            }
+          } else if (currentRole === 'admin') {
+            // Admin sees all status changes
+            const msg = `Order ${orderId}: ${STATUS_LABELS[oldStatus] ?? oldStatus} to ${label}`
+            show(msg, 'info', 4000)
+            notify('EcoFluffa - Status Change', { body: msg, tag: `order-status-${orderId}` })
+          }
+        }
+      )
+      // ── New in-app messages ───────────────────────────────
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'order_messages' },
+        (payload) => {
+          const msg = payload.new as OrderMessage
+
+          // Push into state if not already present (avoid duplicates from optimistic insert)
+          const exists = messages.value.some((m) => m.id === msg.id)
+          if (!exists) {
+            messages.value.push(msg)
+          }
+
+          // Show toast only for messages from the *other* role
+          if (!currentRole || msg.from_role === currentRole) return
+
+          const { show } = useToast()
+          const { notify } = useWebNotifications()
+          const preview = msg.body.length > 60 ? msg.body.slice(0, 60) + '...' : msg.body
+          const senderLabel = msg.from_role.charAt(0).toUpperCase() + msg.from_role.slice(1)
+          const toastMsg = `New message from ${senderLabel} (Order ${msg.order_id}): "${preview}"`
+          show(toastMsg, 'info', 6000)
+          notify(`EcoFluffa - New message from ${senderLabel}`, {
+            body: `Order ${msg.order_id}: "${preview}"`,
+            tag: `message-${msg.order_id}`,
+          })
         }
       )
       .subscribe()
@@ -142,6 +213,20 @@ export function usePlatform() {
     const trimmed = body.trim()
     if (!trimmed) return
 
+    // ── Optimistic insert ─────────────────────────────────────
+    // Show the message instantly in the UI before the DB responds
+    const tempId = `temp-${Date.now()}`
+    const optimistic: OrderMessage = {
+      id: tempId,
+      order_id: orderId,
+      from_role: fromRole,
+      sender_name: senderName,
+      body: trimmed,
+      created_at: new Date().toISOString(),
+    }
+    messages.value.push(optimistic)
+
+    // ── Persist to DB ─────────────────────────────────────────
     const msg = {
       order_id: orderId,
       from_role: fromRole,
@@ -154,7 +239,23 @@ export function usePlatform() {
       .insert(msg)
       .select()
       .single()
-    if (msgData) messages.value.push(msgData as OrderMessage)
+
+    if (msgData) {
+      const real = msgData as OrderMessage
+      const tempIdx = messages.value.findIndex((m) => m.id === tempId)
+      const realAlreadyPushed = messages.value.some((m) => m.id === real.id)
+
+      if (realAlreadyPushed && tempIdx !== -1) {
+        // Realtime beat us — real already in state, remove the temp
+        messages.value.splice(tempIdx, 1)
+      } else if (tempIdx !== -1) {
+        // Normal path — swap temp with real record
+        messages.value[tempIdx] = real
+      } else {
+        // Temp was already removed, just push real
+        messages.value.push(real)
+      }
+    }
 
     // Log activity
     const activity = {

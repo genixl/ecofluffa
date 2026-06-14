@@ -35,26 +35,28 @@
 <script setup lang="ts">
 const { toasts, dismiss } = useToast()
 
-const toastStyle = (type: 'success' | 'error' | 'info') => {
+const toastStyle = (type: 'success' | 'error' | 'info' | 'warning') => {
   const map = {
     success: 'background: linear-gradient(135deg, #10b981, #059669);',
     error:   'background: linear-gradient(135deg, #ef4444, #dc2626);',
     info:    'background: linear-gradient(135deg, #3b82f6, #2563eb);',
+    warning: 'background: linear-gradient(135deg, #f59e0b, #d97706);',
   }
   return map[type]
 }
 
-const iconBgStyle = (type: 'success' | 'error' | 'info') => {
+const iconBgStyle = (type: 'success' | 'error' | 'info' | 'warning') => {
   const map = {
     success: 'background: rgba(255,255,255,0.25);',
     error:   'background: rgba(255,255,255,0.25);',
     info:    'background: rgba(255,255,255,0.25);',
+    warning: 'background: rgba(255,255,255,0.25);',
   }
   return map[type]
 }
 
-const iconName = (type: 'success' | 'error' | 'info') => {
-  return { success: 'mdi:check', error: 'mdi:close', info: 'mdi:information' }[type]
+const iconName = (type: 'success' | 'error' | 'info' | 'warning') => {
+  return { success: 'mdi:check', error: 'mdi:close', info: 'mdi:information', warning: 'mdi:bell-ring' }[type]
 }
 </script>
 

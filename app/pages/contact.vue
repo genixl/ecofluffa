@@ -169,7 +169,7 @@ const submit = async () => {
   submitting.value = true
   const { error } = await submitContactForm(name.value, email.value, subject.value, message.value)
   submitting.value = false
-
+ 
   if (error) {
     formError.value = error
     toastError('Failed to send message. Please try again.')

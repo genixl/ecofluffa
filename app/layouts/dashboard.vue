@@ -47,7 +47,31 @@
           </div>
         </nav>
 
+        <!-- Enable Notifications prompt -->
+        <div
+          v-if="notifIsDefault"
+          class="mx-3 mb-3 px-4 py-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all hover:opacity-90"
+          style="background: linear-gradient(135deg, #3b82f6, #2563eb);"
+          @click="enableNotifications"
+          title="Click to enable browser notifications"
+        >
+          <Icon name="mdi:bell-ring" size="18" style="color:#fff; flex-shrink:0;" />
+          <div style="color:#fff;">
+            <div class="text-xs font-bold leading-tight">Enable Notifications</div>
+            <div class="text-xs opacity-80 leading-tight mt-0.5">Get order & message alerts</div>
+          </div>
+        </div>
+        <div
+          v-else-if="notifIsGranted"
+          class="mx-3 mb-3 px-4 py-2 rounded-xl flex items-center gap-2"
+          style="background-color: var(--bg-subtle);"
+        >
+          <Icon name="mdi:bell-check" size="16" style="color: #10b981; flex-shrink:0;" />
+          <span class="text-xs font-medium" style="color: var(--text-muted);">Notifications on</span>
+        </div>
+
         <div class="px-3 pb-5" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+
           <button
             @click="handleLogout"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 w-full hover:bg-[var(--bg-subtle)]"
@@ -96,6 +120,7 @@ const route = useRoute()
 const supabase = useSupabaseClient()
 const { role, signOut, fetchProfile, authUserId, user } = useAuth()
 const { needsOnboarding, fetchMyProvider } = useProviderProfile()
+const { init: initNotifPermission, requestPermission, isDefault: notifIsDefault, isGranted: notifIsGranted } = useWebNotifications()
 
 const sidebarOpen = ref(false)
 
@@ -111,6 +136,7 @@ const dashboardRole = computed<UserRole | null>(() => {
 
 // Load profile in background; nav does not wait on it
 onMounted(async () => {
+  initNotifPermission()
   const id = user.value?.id ?? authUserId.value
   if (id) {
     await fetchProfile(id)
@@ -125,6 +151,10 @@ onMounted(async () => {
     await fetchMyProvider()
   }
 })
+
+const enableNotifications = async () => {
+  await requestPermission()
+}
 
 watch(
   [role, () => route.path],

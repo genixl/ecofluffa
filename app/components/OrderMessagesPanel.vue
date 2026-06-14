@@ -42,9 +42,10 @@
         v-model="draft"
         type="text"
         :placeholder="`Message as ${senderName}…`"
-        class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+        :disabled="sending"
+        class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue disabled:opacity-50"
       />
-      <AppButton label="Send" variant="primary" type="submit" />
+      <AppButton :label="sending ? 'Sending...' : 'Send'" variant="primary" type="submit" :disabled="sending" />
     </form>
   </div>
 </template>
@@ -63,6 +64,7 @@ const props = defineProps<{
 
 const { getMessagesForOrder, addMessage } = usePlatform();
 const draft = ref("");
+const sending = ref(false);
 const scrollEl = ref<HTMLElement | null>(null);
 
 const thread = computed(() => getMessagesForOrder(props.orderId));
@@ -80,13 +82,16 @@ const formatTime = (iso: string) => {
   }
 };
 
-const send = () => {
-  if (!draft.value.trim()) return;
-  addMessage(props.orderId, props.currentRole, props.senderName, draft.value);
+const send = async () => {
+  if (!draft.value.trim() || sending.value) return;
+  const body = draft.value;
   draft.value = "";
-  nextTick(() => {
-    if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight;
-  });
+  sending.value = true;
+  try {
+    await addMessage(props.orderId, props.currentRole, props.senderName, body);
+  } finally {
+    sending.value = false;
+  }
 };
 
 watch(
