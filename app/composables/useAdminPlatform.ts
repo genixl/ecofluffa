@@ -1,21 +1,241 @@
-import type { OrderStatus } from '~/types/supabase'
+import type { OrderStatus, Profile, Provider } from '~/types/supabase'
+
+export interface AdminOrderStats {
+  today: number
+  last7Days: number
+  last30Days: number
+  total: number
+  active: number
+  pending: number
+  delivered: number
+  cancelled: number
+}
+
+export interface AdminPlatformStats {
+  orders: AdminOrderStats
+  totalProviders: number
+  listedProviders: number
+  totalCustomers: number
+}
+
+export interface ProviderPerformanceRow {
+  id: string
+  name: string
+  avgRating: number
+  completed: number
+}
+
+export interface AdminReportsData {
+  monthlyActiveUsers: number
+  totalDelivered: number
+  totalOrders: number
+  topService: string
+  topServiceCount: number
+  providerPerformance: ProviderPerformanceRow[]
+}
+
+function startOfTodayIso() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
+
+function daysAgoIso(days: number) {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
 
 export function useAdminPlatform() {
-  const platform = usePlatform()
+  const supabase = useSupabaseClient()
 
-  const updateOrderStatus = (id: string, status: OrderStatus) =>
-    platform.updateOrderStatus(id, status, 'admin', 'Ecofluffa Admin')
+  const stats = useState<AdminPlatformStats | null>('admin-platform-stats', () => null)
+  const providers = useState<Provider[]>('admin-providers', () => [])
+  const customers = useState<Profile[]>('admin-customers', () => [])
+  const reports = useState<AdminReportsData | null>('admin-reports', () => null)
+  const loaded = useState<boolean>('admin-platform-loaded', () => false)
+
+  const countOrders = async (opts?: { since?: string; status?: OrderStatus }) => {
+    let q = supabase.from('orders').select('*', { count: 'exact', head: true })
+    if (opts?.since) q = q.gte('created_at', opts.since)
+    if (opts?.status) q = q.eq('status', opts.status)
+    const { count, error } = await q
+    if (error) return 0
+    return count ?? 0
+  }
+
+  const countActiveOrders = async (since?: string) => {
+    let q = supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending', 'washing', 'ready'])
+    if (since) q = q.gte('created_at', since)
+    const { count, error } = await q
+    if (error) return 0
+    return count ?? 0
+  }
+
+  const loadStats = async (force = false) => {
+    if (loaded.value && !force) return
+
+    const today = startOfTodayIso()
+    const last7 = daysAgoIso(7)
+    const last30 = daysAgoIso(30)
+
+    const [
+      todayCount,
+      last7Count,
+      last30Count,
+      totalCount,
+      activeCount,
+      pendingCount,
+      deliveredCount,
+      cancelledCount,
+      totalProviders,
+      listedProviders,
+      totalCustomers,
+    ] = await Promise.all([
+      countOrders({ since: today }),
+      countOrders({ since: last7 }),
+      countOrders({ since: last30 }),
+      countOrders(),
+      countActiveOrders(),
+      countOrders({ status: 'pending' }),
+      countOrders({ status: 'delivered' }),
+      countOrders({ status: 'cancelled' }),
+      supabase.from('providers').select('*', { count: 'exact', head: true }),
+      supabase.from('providers').select('*', { count: 'exact', head: true }).eq('is_listed', true),
+      supabase.rpc('count_customers'),
+    ])
+
+    console.log('Stats query results:', {
+      totalProviders: totalProviders,
+      listedProviders: listedProviders,
+      totalCustomers: totalCustomers,
+    })
+
+    stats.value = {
+      orders: {
+        today: todayCount,
+        last7Days: last7Count,
+        last30Days: last30Count,
+        total: totalCount,
+        active: activeCount,
+        pending: pendingCount,
+        delivered: deliveredCount,
+        cancelled: cancelledCount,
+      },
+      totalProviders: totalProviders.count ?? 0,
+      listedProviders: listedProviders.count ?? 0,
+      totalCustomers: totalCustomers?.data ?? 0,
+    }
+    loaded.value = true
+  }
+
+  const loadProviders = async () => {
+    const { data, error } = await supabase
+      .from('providers')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) {
+      console.error('Failed to load providers', error)
+      providers.value = []
+      return
+    }
+    console.log('Loaded providers:', data?.length || 0)
+    providers.value = data as Provider[]
+  }
+
+  const loadCustomers = async () => {
+    const { data, error } = await supabase
+      .rpc('get_customers')
+
+    if (error) {
+      console.error('Failed to load customers', error)
+      customers.value = []
+      return
+    }
+
+    console.log('Loaded customers:', data?.length || 0)
+    customers.value = data as Profile[]
+  }
+
+  const loadReports = async () => {
+    const last30 = daysAgoIso(30)
+
+    const [
+      { data: providerRows, error: providerError },
+      { data: deliveredOrders, error: deliveredError },
+      { data: recentOrders, error: recentError },
+      { data: serviceRows, error: serviceError },
+      totalOrders,
+    ] = await Promise.all([
+      supabase.from('providers').select('id, name, rating, review_count').order('rating', { ascending: false }),
+      supabase.from('orders').select('provider_id').eq('status', 'delivered'),
+      supabase.from('orders').select('customer_id').gte('created_at', last30),
+      supabase.from('order_services').select('title'),
+      countOrders(),
+    ])
+
+    if (providerError) console.error('Failed to load providers for reports:', providerError)
+    if (deliveredError) console.error('Failed to load delivered orders:', deliveredError)
+    if (recentError) console.error('Failed to load recent orders:', recentError)
+    if (serviceError) console.error('Failed to load service rows:', serviceError)
+
+    const completedByProvider = new Map<string, number>()
+    for (const o of deliveredOrders ?? []) {
+      const id = (o as { provider_id: string }).provider_id
+      completedByProvider.set(id, (completedByProvider.get(id) ?? 0) + 1)
+    }
+
+    const providerPerformance: ProviderPerformanceRow[] = (providerRows ?? []).map((p) => {
+      const row = p as { id: string; name: string; rating: number; review_count: number }
+      return {
+        id: row.id,
+        name: row.name,
+        avgRating: row.rating,
+        completed: completedByProvider.get(row.id) ?? 0,
+      }
+    })
+
+    providerPerformance.sort((a, b) => b.completed - a.completed)
+
+    const serviceCounts = new Map<string, number>()
+    for (const s of serviceRows ?? []) {
+      const title = (s as { title: string }).title
+      serviceCounts.set(title, (serviceCounts.get(title) ?? 0) + 1)
+    }
+    let topService = '—'
+    let topServiceCount = 0
+    for (const [title, count] of serviceCounts) {
+      if (count > topServiceCount) {
+        topService = title
+        topServiceCount = count
+      }
+    }
+
+    const mau = new Set((recentOrders ?? []).map((o) => (o as { customer_id: string }).customer_id)).size
+
+    reports.value = {
+      monthlyActiveUsers: mau,
+      totalDelivered: deliveredOrders?.length ?? 0,
+      totalOrders: totalOrders as number,
+      topService,
+      topServiceCount,
+      providerPerformance,
+    }
+  }
 
   return {
-    orders: platform.orders,
-    adminStats: platform.adminStats,
-    recentActivities: platform.recentActivities,
-    getOrderById: platform.getOrderById,
-    updateOrderStatus,
-    getMessagesForOrder: platform.getMessagesForOrder,
-    addMessage: platform.addMessage,
-    statusLabels: platform.statusLabels,
-    getFlowStepIndex: platform.getFlowStepIndex,
-    loadAll: platform.loadAll,
+    stats,
+    providers,
+    customers,
+    reports,
+    loaded,
+    loadStats,
+    loadProviders,
+    loadCustomers,
+    loadReports,
   }
 }

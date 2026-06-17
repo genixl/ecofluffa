@@ -242,7 +242,7 @@ const roleLabel = computed(() => {
 const notifLinkPrefix = computed(() => {
   if (dashboardRole.value === 'customer') return '/customer/order'
   if (dashboardRole.value === 'provider') return '/provider/order'
-  return '/admin/orders'
+  return '/admin'
 })
 
 const roleEmoji = computed(() => {
@@ -274,7 +274,6 @@ const navItems = computed<NavItem[]>(() => {
         : dashboardRole.value === 'admin'
           ? [
               { to: '/admin', label: 'Overview', icon: 'mdi:chart-box' },
-              { to: '/admin/orders', label: 'All Orders', icon: 'mdi:package' },
               { to: '/admin/providers', label: 'Providers', icon: 'mdi:store' },
               { to: '/admin/customers', label: 'Customers', icon: 'mdi:account-group' },
               { to: '/admin/contacts', label: 'Support', icon: 'mdi:headset' },

@@ -205,7 +205,6 @@ const navLinks = computed(() => {
   if (role.value === 'admin') {
     return [
       { to: '/admin', label: 'Dashboard' },
-      { to: '/admin/orders', label: 'Orders' },
     ]
   }
   return [
