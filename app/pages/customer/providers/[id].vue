@@ -168,7 +168,7 @@ const selectedServiceId = ref<string>('')
 // Pre-select first service when provider loads
 watchEffect(() => {
   if (offers.value.length && !selectedServiceId.value) {
-    selectedServiceId.value = offers.value[0].service_id
+    selectedServiceId.value = offers.value[0]?.service_id ?? ''
   }
 })
 

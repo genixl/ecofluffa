@@ -287,7 +287,17 @@ const flowIndex = computed(() => order.value ? getFlowStepIndex(order.value.stat
 const existingRating = computed(() => order.value ? getRatingForOrder(order.value.id) : null)
 
 const orderActivities = computed(() =>
-  recentActivities.value.filter((a) => a.order_id === routeId.value)
+  recentActivities.value
+    .filter((a) => a.order_id === routeId.value)
+    .map((a) => ({
+      id: a.id,
+      orderId: a.order_id,
+      type: a.type,
+      title: a.title,
+      detail: a.detail,
+      at: a.created_at,
+      actorName: a.actor_name,
+    }))
 )
 
 const statusEvents = computed(() => {

@@ -11,7 +11,7 @@ export function useWebNotifications() {
 
   /** Call once on app mount to sync the current permission state */
   const init = () => {
-    if (!process.client || !('Notification' in window)) {
+    if (!import.meta.client || !('Notification' in window)) {
       permission.value = 'unsupported'
       return
     }
@@ -20,7 +20,7 @@ export function useWebNotifications() {
 
   /** Ask the user for permission. Call this on a user gesture (button click). */
   const requestPermission = async (): Promise<NotificationPermission | 'unsupported'> => {
-    if (!process.client || !('Notification' in window)) {
+    if (!import.meta.client || !('Notification' in window)) {
       permission.value = 'unsupported'
       return 'unsupported'
     }
@@ -42,7 +42,7 @@ export function useWebNotifications() {
       silent?: boolean
     }
   ) => {
-    if (!process.client || !('Notification' in window)) return
+    if (!import.meta.client || !('Notification' in window)) return
     if (Notification.permission !== 'granted') return
 
     const notif = new Notification(title, {

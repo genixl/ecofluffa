@@ -287,8 +287,8 @@ const handleAddAddress = async () => {
 }
 
 const handleSetDefault = async (id: string) => {
-  const ok = await setDefault(id)
-  if (ok) success('Default address updated.')
+  await setDefault(id)
+  success('Default address updated.')
 }
 
 const handleDelete = async (id: string) => {

@@ -174,7 +174,7 @@ watch(filteredServices, (list) => {
 
 const selectedService = computed(() => getServiceById(selectedServiceId.value))
 
-const comparisonTitle = computed(() => `Compare providers — ${selectedService.value?.title ?? 'Service'}`)
+const comparisonTitle = computed(() => `Compare providers - ${selectedService.value?.title ?? 'Service'}`)
 const comparisonSubtitle = computed(() => {
   const n = comparisonRows.value.length
   return `${n} provider${n === 1 ? '' : 's'} offering this service · prices in KSh`

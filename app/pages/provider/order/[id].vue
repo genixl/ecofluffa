@@ -88,7 +88,7 @@
           :order-id="order.id"
           current-role="provider"
           :sender-name="providerName"
-          other-party-label="customer"
+          :other-party-label="order.customer?.full_name ?? 'Customer'"
         />
         <div>
           <SectionHeader title="Platform activity" />
@@ -135,7 +135,17 @@ const currentFlowIndex = computed(() => order.value ? getFlowStepIndex(order.val
 const providerName = computed(() => order.value?.provider?.name ?? profile.value?.full_name ?? 'Provider')
 
 const orderActivities = computed(() =>
-  recentActivities.value.filter((a) => a.order_id === routeId.value)
+  recentActivities.value
+    .filter((a) => a.order_id === routeId.value)
+    .map((a) => ({
+      id: a.id,
+      orderId: a.order_id,
+      type: a.type,
+      title: a.title,
+      detail: a.detail,
+      at: a.created_at,
+      actorName: a.actor_name,
+    }))
 )
 
 const setStatus = async (next: OrderStatus) => {
