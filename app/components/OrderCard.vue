@@ -1,13 +1,24 @@
 <template>
   <NuxtLink
     :to="to"
-    class="block rounded-2xl p-5 transition-all duration-200 group"
+    class="block rounded-2xl p-5 transition-all duration-200 group relative"
     style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);"
     :style="{ '--hover-shadow': 'var(--shadow-md)' }"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
     :class="hovered ? 'card-hovered' : ''"
   >
+    <!-- Urgency badge -->
+    <div
+      v-if="urgency"
+      class="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
+      :style="urgency === 'overdue'
+        ? 'background-color: #fee2e2; color: #ef4444;'
+        : 'background-color: #ffedd5; color: #ea580c;'"
+    >
+      {{ urgency === 'overdue' ? '⚠ Overdue' : '📅 Today' }}
+    </div>
+
     <!-- Top row -->
     <div class="flex items-center justify-between gap-2 mb-3">
       <span class="text-xs font-bold tracking-wide px-2 py-1 rounded-lg" style="background-color: var(--bg-subtle); color: var(--text-muted);">{{ orderId }}</span>
@@ -57,6 +68,7 @@ defineProps<{
   to: string
   pickupAddress?: string
   customerName?: string
+  urgency?: 'today' | 'overdue' | null
 }>()
 
 const hovered = ref(false)

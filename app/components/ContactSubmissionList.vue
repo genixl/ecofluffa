@@ -37,7 +37,7 @@
             </div>
             <div class="text-sm" style="color: var(--text-muted);">{{ submission.email }}</div>
           </div>
-          <div class="text-xs" style="color: var(--text-muted);">{{ formatDate(submission.submittedAt) }}</div>
+          <div class="text-xs" style="color: var(--text-muted);">{{ formatDate(submission.created_at) }}</div>
         </div>
 
         <!-- Subject and Message -->
@@ -47,10 +47,10 @@
         </div>
 
         <!-- Admin Response (if exists) -->
-        <div v-if="submission.adminResponse" class="mb-4 p-4 rounded-lg" style="background-color: var(--bg-subtle);">
+        <div v-if="submission.admin_response" class="mb-4 p-4 rounded-lg" style="background-color: var(--bg-subtle);">
           <div class="text-xs font-semibold mb-2" style="color: var(--text-muted);">Admin Response</div>
-          <div class="text-sm leading-relaxed" style="color: var(--text-primary);">{{ submission.adminResponse }}</div>
-          <div class="text-xs mt-2" style="color: var(--text-muted);">{{ formatDate(submission.respondedAt) }}</div>
+          <div class="text-sm leading-relaxed" style="color: var(--text-primary);">{{ submission.admin_response }}</div>
+          <div class="text-xs mt-2" style="color: var(--text-muted);">{{ formatDate(submission.responded_at ?? undefined) }}</div>
         </div>
 
         <!-- Actions -->
@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ContactSubmission } from '~/data/contactSubmissions';
+import type { ContactSubmission } from '~/types/supabase';
 
 defineProps<{
   submissions: ContactSubmission[];

@@ -2,7 +2,6 @@
   <div class="min-h-screen transition-theme" style="background-color: var(--bg-base); color: var(--text-primary);">
     <div class="max-w-2xl mx-auto px-6 py-12">
 
-      <!-- Back link -->
       <NuxtLink
         :to="backLink"
         class="inline-flex items-center gap-2 text-sm font-semibold mb-8 transition-opacity hover:opacity-70"
@@ -11,205 +10,223 @@
         <Icon name="mdi:arrow-left" size="18" /> {{ backLabel }}
       </NuxtLink>
 
-      <SectionHeader
-        title="Book Your Pickup"
-        subtitle="Fill in your details and confirm the booking"
-      />
+      <SectionHeader title="Book Your Pickup" subtitle="Fill in your details and confirm the booking" />
 
-      <!-- Provider + Service info banner -->
-      <div v-if="selectedProvider" class="rounded-2xl p-5 mb-8 flex items-center gap-4"
-        style="background-color: var(--brand-blue-light); border: 1px solid var(--brand-blue);">
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-          style="background-color: var(--brand-blue);">
-          <Icon name="mdi:store" size="22" style="color: #fff;" />
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="font-bold" style="color: var(--brand-blue);">{{ selectedProvider.name }}</div>
-          <div class="text-sm" style="color: var(--text-muted);">{{ selectedProvider.location }} · {{ selectedProvider.pickupFee }}</div>
-        </div>
-        <div v-if="selectedOffer" class="text-right shrink-0">
-          <div class="font-bold" style="color: var(--brand-orange);">KSh {{ selectedOffer.price }}</div>
-          <div class="text-xs" style="color: var(--text-muted);">{{ selectedOffer.unit }}</div>
-        </div>
-      </div>
+      <div v-if="loadingData" class="text-center py-12 text-muted">Loading…</div>
 
-      <form @submit.prevent="submitOrder"
-        class="rounded-2xl p-8 space-y-6"
-        style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
-
-        <!-- Provider (if not pre-filled, let user pick) -->
-        <div v-if="!selectedProvider">
-          <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Provider</label>
-          <select
-            v-model="providerIdLocal"
-            class="w-full px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
-            style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);"
-          >
-            <option value="">Select a provider…</option>
-            <option v-for="p in allProviders" :key="p.id" :value="p.id">{{ p.name }}</option>
-          </select>
-        </div>
-
-        <!-- Service type -->
-        <div>
-          <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Service Type</label>
-          <select
-            v-model="serviceType"
-            class="w-full px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
-            style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);"
-          >
-            <option v-for="s in availableServices" :key="s.id" :value="s.id">
-              {{ s.title }} — {{ s.price }}
-            </option>
-          </select>
-        </div>
-
-        <InputField
-          label="Pickup Address"
-          type="text"
-          placeholder="e.g., 12 Green Street, Apt 4"
-          v-model="pickupAddress"
-        />
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField label="Pickup Date" type="date" v-model="pickupDate" />
-          <InputField label="Pickup Time" type="time" v-model="pickupTime" />
-        </div>
-
-        <InputField
-          label="Your Name"
-          type="text"
-          placeholder="Full name"
-          v-model="customerName"
-        />
-
-        <InputField
-          label="Phone Number"
-          type="tel"
-          placeholder="+254 7XX XXX XXX"
-          v-model="customerPhone"
-        />
-
-        <div v-if="formError" class="text-red-500 text-sm font-medium">{{ formError }}</div>
-
-        <!-- Price estimate -->
-        <div v-if="selectedOffer" class="rounded-xl p-4 flex items-center justify-between"
-          style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
-          <div>
-            <div class="text-sm font-semibold" style="color: var(--text-primary);">Estimated Cost</div>
-            <div class="text-xs" style="color: var(--text-muted);">{{ selectedOffer.unit }} · turnaround {{ selectedOffer.turnaround }}</div>
+      <template v-else>
+        <div v-if="selectedProvider" class="rounded-2xl p-5 mb-8 flex items-center gap-4"
+          style="background-color: var(--brand-blue-light); border: 1px solid var(--brand-blue);">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color: var(--brand-blue);">
+            <Icon name="mdi:store" size="22" style="color: #fff;" />
           </div>
-          <div class="font-bold text-xl" style="color: var(--brand-orange);">KSh {{ selectedOffer.price }}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold" style="color: var(--brand-blue);">{{ selectedProvider.name }}</div>
+            <div class="text-sm" style="color: var(--text-muted);">{{ selectedProvider.location }} · {{ selectedProvider.pickup_fee }}</div>
+          </div>
+          <div v-if="selectedOffer" class="text-right shrink-0">
+            <div class="font-bold" style="color: var(--brand-orange);">KSh {{ selectedOffer.price }}</div>
+            <div class="text-xs" style="color: var(--text-muted);">{{ selectedOffer.unit }}</div>
+          </div>
         </div>
 
-        <div class="flex gap-4 pt-2">
-          <AppButton label="Confirm Booking" variant="primary" type="submit" />
-          <AppButton
-            label="Cancel"
-            variant="outline"
-            type="button"
-            @click="$router.back()"
-          />
-        </div>
-      </form>
+        <form @submit.prevent="submitOrder"
+          class="rounded-2xl p-8 space-y-6"
+          style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
 
+          <div v-if="!selectedProvider">
+            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Provider</label>
+            <select v-model="providerIdLocal"
+              class="w-full px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
+              style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);">
+              <option value="">Select a provider…</option>
+              <option v-for="p in allProviders" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Service Type</label>
+            <select v-model="serviceId"
+              class="w-full px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
+              style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);">
+              <option v-for="s in availableServices" :key="s.service_id" :value="s.service_id">
+                {{ s.service?.title }} | KSh {{ s.price }} {{ s.unit }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">
+              Pickup Address
+            </label>
+
+            <div v-if="addresses.length" class="mb-3">
+              <label class="block text-xs font-medium mb-1.5" style="color: var(--text-muted);">Use a saved address</label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="addr in addresses"
+                  :key="addr.id"
+                  type="button"
+                  @click="pickupAddress = addr.address"
+                  class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all"
+                  :style="pickupAddress === addr.address
+                    ? 'background-color: var(--brand-blue); color: #fff; border-color: var(--brand-blue);'
+                    : 'background-color: var(--bg-subtle); color: var(--text-primary); border-color: var(--border-color);'"
+                >
+                  <Icon name="mdi:map-marker" size="13" />
+                  {{ addr.label || addr.address.split(',')[0] }}
+                  <span v-if="addr.is_default" class="opacity-70">(default)</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <input
+                id="pickup-address-input"
+                v-model="pickupAddress"
+                type="text"
+                placeholder="e.g., 12 Green Street, Apt 4, Nairobi"
+                class="flex-1 px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
+                style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);"
+              />
+              <a
+                v-if="pickupAddress.trim()"
+                :href="mapsUrl(pickupAddress)"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Verify location on Google Maps"
+                class="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-semibold shrink-0 transition-all hover:opacity-90"
+                style="background-color: var(--brand-blue); color: #fff;"
+              >
+                <Icon name="mdi:map-search" size="16" />
+                Verify
+              </a>
+            </div>
+            <p class="text-xs mt-1.5" style="color: var(--text-muted);">
+              Type your address then click <strong>Verify</strong> to confirm it on Google Maps.
+            </p>
+          </div>
+
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField label="Pickup Date" type="date" v-model="pickupDate" />
+            <InputField label="Pickup Time" type="time" v-model="pickupTime" />
+          </div>
+
+          <InputField label="Phone Number" type="tel" placeholder="+254 7XX XXX XXX" v-model="customerPhone" />
+
+          <div v-if="formError" class="text-red-500 text-sm font-medium">{{ formError }}</div>
+
+          <div v-if="selectedOffer" class="rounded-xl p-4 flex items-center justify-between"
+            style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
+            <div>
+              <div class="text-sm font-semibold" style="color: var(--text-primary);">Estimated Cost</div>
+              <div class="text-xs" style="color: var(--text-muted);">{{ selectedOffer.unit }} · turnaround {{ selectedOffer.turnaround }}</div>
+            </div>
+            <div class="font-bold text-xl" style="color: var(--brand-orange);">KSh {{ selectedOffer.price }}</div>
+          </div>
+
+          <div class="flex gap-4 pt-2">
+            <AppButton :label="submitting ? 'Booking…' : 'Confirm Booking'" variant="primary" type="submit" :disabled="submitting" />
+            <AppButton label="Cancel" variant="outline" type="button" @click="$router.back()" />
+          </div>
+        </form>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { HARDCODED_LAUNDRY_PROVIDERS } from '~/data/customerProviders'
-import { HARDCODED_LAUNDRY_SERVICES } from '~/data/customerServices'
-import { usePlatform } from '~/composables/usePlatform'
-import { useAuth } from '~/composables/useAuth'
-
-const route  = useRoute()
+const route = useRoute()
 const router = useRouter()
 const { createOrder } = usePlatform()
-const { userName } = useAuth()
+const { profile } = useAuth()
+const { providers, providerServices, fetchAll } = useServices()
+const { addresses, mapsUrl, fetchAddresses, defaultAddress } = useAddresses()
+const { success } = useToast()
 
-const allProviders = HARDCODED_LAUNDRY_PROVIDERS
+const loadingData = ref(true)
+const submitting = ref(false)
+const formError = ref('')
 
-// Read query params
 const queryProviderId = computed(() => String(route.query.provider ?? ''))
-const queryServiceId  = computed(() => String(route.query.service  ?? ''))
+const queryServiceId = computed(() => String(route.query.service ?? ''))
 
-// Local state for when not pre-filled
 const providerIdLocal = ref(queryProviderId.value)
-
-// Resolve the active provider (query param wins, fallback to local selection)
 const resolvedProviderId = computed(() => queryProviderId.value || providerIdLocal.value)
-const selectedProvider   = computed(() => allProviders.find(p => p.id === resolvedProviderId.value) ?? null)
 
-// Services available from selected provider, or all services if no provider
+const allProviders = computed(() => providers.value)
+const selectedProvider = computed(() => providers.value.find((p) => p.id === resolvedProviderId.value) ?? null)
+
 const availableServices = computed(() => {
-  if (selectedProvider.value) {
-    return selectedProvider.value.offers
-      .map(o => HARDCODED_LAUNDRY_SERVICES.find(s => s.id === o.serviceId))
-      .filter(Boolean) as typeof HARDCODED_LAUNDRY_SERVICES
-  }
-  return HARDCODED_LAUNDRY_SERVICES
+  if (!resolvedProviderId.value) return []
+  return providerServices.value
+    .filter((ps) => ps.provider_id === resolvedProviderId.value)
 })
 
-// Pre-select service from query param or first available
-const serviceType = ref(queryServiceId.value || availableServices.value[0]?.id || 'wash-fold')
-watch(availableServices, list => {
-  if (!list.some(s => s.id === serviceType.value) && list[0]) {
-    serviceType.value = list[0].id
+const serviceId = ref(queryServiceId.value)
+watch(availableServices, (list) => {
+  if (list.length && !list.some((s) => s.service_id === serviceId.value)) {
+    serviceId.value = list[0]?.service_id ?? ''
   }
 })
 
 const selectedOffer = computed(() =>
-  selectedProvider.value?.offers.find(o => o.serviceId === serviceType.value) ?? null
-)
-const selectedService = computed(() =>
-  HARDCODED_LAUNDRY_SERVICES.find(s => s.id === serviceType.value) ?? null
+  availableServices.value.find((s) => s.service_id === serviceId.value) ?? null
 )
 
 // Form fields
 const pickupAddress = ref('')
-const pickupDate    = ref('')
-const pickupTime    = ref('')
-const customerName  = ref(userName.value || '')
-const customerPhone = ref('')
-const formError     = ref('')
+const pickupDate = ref('')
+const pickupTime = ref('')
+const customerPhone = ref(profile.value?.phone ?? '')
 
-// Back navigation
-const backLink  = computed(() => queryProviderId.value ? `/providers/${queryProviderId.value}` : '/browse')
+const backLink = computed(() => queryProviderId.value ? `/customer/providers/${queryProviderId.value}` : '/customer/browse')
 const backLabel = computed(() => selectedProvider.value ? `Back to ${selectedProvider.value.name}` : 'Back to Browse')
 
-const submitOrder = () => {
+onMounted(async () => {
+  await Promise.all([fetchAll(), fetchAddresses()])
+  if (!serviceId.value && availableServices.value.length) {
+    serviceId.value = availableServices.value[0]?.service_id ?? ''
+  }
+  // Pre-fill default saved address if available
+  if (!pickupAddress.value && defaultAddress.value) {
+    pickupAddress.value = defaultAddress.value.address
+  }
+  loadingData.value = false
+})
+
+const submitOrder = async () => {
   formError.value = ''
   if (!resolvedProviderId.value) { formError.value = 'Please select a provider.'; return }
-  if (!pickupAddress.value)      { formError.value = 'Please enter your pickup address.'; return }
-  if (!pickupDate.value)         { formError.value = 'Please choose a pickup date.'; return }
-  if (!pickupTime.value)         { formError.value = 'Please choose a pickup time.'; return }
-  if (!customerName.value)       { formError.value = 'Please enter your name.'; return }
+  if (!serviceId.value) { formError.value = 'Please select a service.'; return }
+  if (!pickupAddress.value) { formError.value = 'Please enter your pickup address.'; return }
+  if (!pickupDate.value) { formError.value = 'Please choose a pickup date.'; return }
+  if (!pickupTime.value) { formError.value = 'Please choose a pickup time.'; return }
 
-  const provider  = selectedProvider.value!
-  const service   = selectedService.value
-  const offer     = selectedOffer.value
+  submitting.value = true
 
-  const id = createOrder({
-    provider:       provider.name,
-    customerName:   customerName.value,
-    customerPhone:  customerPhone.value || '+254 7XX XXX XXX',
-    providerPhone:  '+254 700 111 222',
-    pickupDate:     pickupDate.value,
-    pickupTime:     pickupTime.value,
-    pickupAddress:  pickupAddress.value,
-    totalEstimate:  offer ? `KSh ${offer.price}` : 'KSh —',
-    services: [
-      {
-        title:       service?.title       ?? serviceType.value,
-        price:       offer  ? `KSh ${offer.price}` : '—',
-        description: service?.description ?? `${serviceType.value} service`,
-      },
-    ],
+  const offer = selectedOffer.value
+  const svc = offer?.service
+
+  const id = await createOrder({
+    provider_id: resolvedProviderId.value,
+    pickup_date: pickupDate.value,
+    pickup_time: pickupTime.value,
+    pickup_address: pickupAddress.value,
+    total_estimate: offer ? `KSh ${offer.price} ${offer.unit}` : 'N/A',
+    services: [{
+      title: svc?.title ?? serviceId.value,
+      price: offer ? `KSh ${offer.price}` : 'N/A',
+      description: svc?.description ?? '',
+    }],
   })
 
+  submitting.value = false
+  if (!id) { formError.value = 'Failed to place order. Please try again.'; return }
+  success('Booking confirmed! Your provider will be notified.')
   router.push(`/customer/order/${id}`)
 }
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', middleware: ['auth'] })
 </script>

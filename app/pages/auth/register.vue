@@ -1,34 +1,15 @@
 <template>
   <div>
-    <div class="text-brand-blue font-bold text-2xl mb-2">
-      Join EcoFluffa
-    </div>
+    <div class="text-brand-blue font-bold text-2xl mb-2">Join EcoFluffa</div>
     <p class="text-gray-600 text-sm mb-6">Create your account to get started</p>
 
     <form class="space-y-4" @submit.prevent="submit">
-      <InputField
-        label="Full Name"
-        type="text"
-        placeholder="John Doe"
-        v-model="fullName"
-      />
-      <InputField
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        v-model="email"
-      />
-      <InputField
-        label="Password"
-        type="password"
-        placeholder="Create a password"
-        v-model="password"
-      />
+      <InputField label="Full Name" type="text" placeholder="John Doe" v-model="fullName" />
+      <InputField label="Email" type="email" placeholder="you@example.com" v-model="email" />
+      <InputField label="Password" type="password" placeholder="Create a password (min 6 chars)" v-model="password" />
 
       <div>
-        <label class="block text-brand-charcoal mb-3 font-semibold text-sm">
-          I am a:
-        </label>
+        <label class="block text-brand-charcoal mb-3 font-semibold text-sm">I am a:</label>
         <div class="grid grid-cols-2 gap-3">
           <label
             v-for="r in roles"
@@ -50,9 +31,10 @@
 
       <div class="pt-2">
         <AppButton
-          label="Create Account"
+          :label="loading ? 'Creating account…' : 'Create Account'"
           variant="primary"
           type="submit"
+          :disabled="loading"
         />
       </div>
     </form>
@@ -67,10 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuth } from '~/composables/useAuth'
-
-const router = useRouter()
-const { login } = useAuth()
+const { signUp, loading, getRedirectPath } = useAuth()
 
 const fullName = ref('')
 const email = ref('')
@@ -83,14 +62,34 @@ const roles = [
   { value: 'provider', label: 'Service Provider', icon: 'mdi:store', desc: 'Offer laundry services' },
 ] as const
 
-const submit = () => {
+const submit = async () => {
   error.value = ''
   if (!fullName.value || !email.value || !password.value) {
     error.value = 'Please fill in all fields.'
     return
   }
-  login(role.value, fullName.value)
-  router.push(role.value === 'provider' ? '/provider' : '/customer')
+  if (password.value.length < 6) {
+    error.value = 'Password must be at least 6 characters.'
+    return
+  }
+
+  const result = await signUp(email.value, password.value, fullName.value, role.value)
+  if (result.error) {
+    error.value = result.error
+    return
+  }
+
+  if (result.needsEmailConfirmation) {
+    await navigateTo({
+      path: '/auth/login',
+      query: {
+        message: 'Account created. Check your email to confirm, then log in.',
+      },
+    })
+    return
+  }
+
+  await navigateTo(result.redirectPath ?? getRedirectPath(role.value), { replace: true })
 }
 
 definePageMeta({ layout: 'auth' })

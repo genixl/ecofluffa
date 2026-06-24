@@ -5,8 +5,8 @@
   >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
 
-      <!-- Logo -->
-      <NuxtLink to="/" class="flex items-center gap-2 font-black text-xl shrink-0" style="color: var(--brand-blue);">
+      <!-- Logo → dashboard when logged in, marketing home when guest -->
+      <NuxtLink :to="logoTo" class="flex items-center gap-2 font-black text-xl shrink-0" style="color: var(--brand-blue);">
         <Icon name="mdi:water" size="28" />
         <span>EcoFluffa</span>
       </NuxtLink>
@@ -28,7 +28,6 @@
 
       <!-- Desktop Right -->
       <div class="hidden md:flex items-center gap-2">
-        <!-- Theme toggle -->
         <button
           @click="toggleTheme"
           class="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
@@ -38,7 +37,6 @@
           <Icon :name="isDark ? 'mdi:weather-sunny' : 'mdi:moon-waning-crescent'" size="20" />
         </button>
 
-        <!-- Logged in: user chip + logout -->
         <template v-if="isLoggedIn">
           <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
             style="background-color: var(--brand-blue-light); color: var(--brand-blue);">
@@ -54,7 +52,6 @@
           </button>
         </template>
 
-        <!-- Logged out: login + register -->
         <template v-else>
           <NuxtLink
             to="/auth/login"
@@ -73,7 +70,7 @@
         </template>
       </div>
 
-      <!-- Mobile Right: theme + hamburger -->
+      <!-- Mobile Right -->
       <div class="flex md:hidden items-center gap-2">
         <button
           @click="toggleTheme"
@@ -105,7 +102,6 @@
       >
         <div class="px-4 py-4 flex flex-col gap-1">
 
-          <!-- User chip (mobile, logged in) -->
           <div v-if="isLoggedIn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl mb-1"
             style="background-color: var(--brand-blue-light);">
             <Icon :name="roleIcon" size="18" style="color: var(--brand-blue);" />
@@ -161,69 +157,71 @@
 <script setup lang="ts">
 import { useAuth } from '~/composables/useAuth'
 
-const route  = useRoute()
-const router = useRouter()
+const route = useRoute()
 const { isDark, toggleTheme } = useTheme()
-const { role, userName, isLoggedIn, logout } = useAuth()
+const { role, userName, isLoggedIn, signOut, getRedirectPath } = useAuth()
 
 const mobileOpen = ref(false)
 
-// Close drawer on route change
 watch(() => route.path, () => { mobileOpen.value = false })
 
 const roleLabel = computed(() => {
   if (role.value === 'customer') return 'Customer'
   if (role.value === 'provider') return 'Provider'
-  if (role.value === 'admin')    return 'Admin'
+  if (role.value === 'admin') return 'Admin'
   return ''
 })
 
 const roleIcon = computed(() => {
   if (role.value === 'customer') return 'mdi:account'
   if (role.value === 'provider') return 'mdi:store'
-  if (role.value === 'admin')    return 'mdi:shield-account'
+  if (role.value === 'admin') return 'mdi:shield-account'
   return 'mdi:account'
 })
 
-// Top navbar links — public/general only (dashboard links stay in the sidebar)
+const logoTo = computed(() => (isLoggedIn.value ? getRedirectPath() : '/'))
+
+// No "Home" link when logged in; dashboard is the default via sidebar / logo
 const navLinks = computed(() => {
+  if (!isLoggedIn.value) {
+    return [
+      { to: '/', label: 'Home' },
+      { to: '/about', label: 'About Us' },
+      { to: '/contact', label: 'Contact Support' },
+    ]
+  }
   if (role.value === 'customer') {
     return [
-      { to: '/',        label: 'Home'            },
-      { to: '/browse',  label: 'Browse Providers' },
-      { to: '/about',   label: 'About Us'        },
+      { to: '/about', label: 'About Us' },
       { to: '/contact', label: 'Contact Support' },
     ]
   }
   if (role.value === 'provider') {
     return [
-      { to: '/',        label: 'Home'            },
-      { to: '/about',   label: 'About Us'        },
+      { to: '/about', label: 'About Us' },
       { to: '/contact', label: 'Contact Support' },
     ]
   }
   if (role.value === 'admin') {
     return [
-      { to: '/', label: 'Home' },
+      { to: '/admin', label: 'Dashboard' },
     ]
   }
-  // Public (not logged in)
   return [
-    { to: '/',        label: 'Home'            },
-    { to: '/about',   label: 'About Us'        },
+    { to: '/about', label: 'About Us' },
     { to: '/contact', label: 'Contact Support' },
   ]
 })
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
+  return route.path === path || route.path.startsWith(`${path}/`)
 }
 
-const handleLogout = () => {
+const handleLogout = async () => {
   mobileOpen.value = false
-  logout()
-  router.push('/')
+  await signOut()
+  await navigateTo('/')
 }
 </script>
 

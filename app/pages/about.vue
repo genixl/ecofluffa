@@ -91,7 +91,7 @@ const mission = [
 ]
 
 const values = [
-  { icon: 'mdi:shield-check', title: 'Reliability', desc: 'We set clear expectations and deliver on them — every single order.' },
+  { icon: 'mdi:shield-check', title: 'Reliability', desc: 'We set clear expectations and deliver on them, every single order.' },
   { icon: 'mdi:eye', title: 'Transparency', desc: 'Live status updates so you always know where your laundry is.' },
   { icon: 'mdi:account-group', title: 'Community', desc: 'Supporting local laundry businesses by connecting them with more customers.' },
   { icon: 'mdi:recycle', title: 'Sustainability', desc: 'Encouraging eco-safe products and responsible water use across our network.' },

@@ -1,168 +1,159 @@
 <template>
   <div>
-    <div class="flex items-start justify-between gap-6">
-      <div>
-        <div class="text-brand-blue font-bold text-3xl">
-          Order {{ order.id }}
-        </div>
-        <div class="text-brand-charcoal mt-2">
-          Customer Pickup: {{ order.pickupDate }} at {{ order.pickupTime }}
-        </div>
-        <div class="text-brand-charcoal text-sm mt-1">
-          Customer: {{ order.customerName }}
-        </div>
-      </div>
-      <OrderStatusBadge :status="order.status" />
-    </div>
-
-    <div class="mt-8">
-      <SectionHeader title="Customer Details" subtitle="Where to pick up and drop off" />
+    <div v-if="loading" class="space-y-6">
+      <SkeletonCard :rows="2" :row-height="36" />
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <div class="text-xs font-semibold text-gray-500 mb-1">Pickup Address</div>
-          <div class="text-brand-charcoal">{{ order.pickupAddress }}</div>
-          <a
-            :href="mapsUrl"
-            target="_blank"
-            rel="noopener"
-            class="mt-3 inline-block text-sm text-brand-blue font-semibold hover:underline"
+        <SkeletonCard v-for="i in 3" :key="i" :rows="3" :row-height="24" class="bg-surface border border-theme rounded-xl p-5 shadow-sm" />
+      </div>
+      <SkeletonCard :rows="5" :row-height="30" />
+    </div>
+
+    <template v-else-if="order">
+      <div class="flex items-start justify-between gap-6">
+        <div>
+          <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
+          <div class="text-brand-charcoal mt-2">Customer Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}</div>
+          <div class="text-brand-charcoal text-sm mt-1">Customer: {{ order.customer?.full_name }}</div>
+        </div>
+        <OrderStatusBadge :status="order.status" />
+      </div>
+
+      <div class="mt-8">
+        <SectionHeader title="Customer Details" subtitle="Where to pick up and drop off" />
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          <div
+            class="rounded-xl p-5 flex flex-col gap-3"
+            style="background-color: var(--brand-blue-light); border: 2px solid var(--brand-blue);"
           >
-            View on Maps
-          </a>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <div class="text-xs font-semibold text-gray-500 mb-1">Customer Contact</div>
-          <div class="text-brand-charcoal">{{ order.customerPhone }}</div>
-          <div class="text-gray-500 text-xs mt-1">
-            Call or text to confirm pickup time.
+            <div class="flex items-center gap-2">
+              <div
+                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style="background-color: var(--brand-blue);"
+              >
+                <Icon name="mdi:map-marker" size="18" style="color: #fff;" />
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wide" style="color: var(--brand-blue);">Pickup Address</span>
+            </div>
+
+            <p class="text-sm font-semibold leading-snug" style="color: var(--text-primary);">
+              {{ order.pickup_address }}
+            </p>
+
+            <a
+              :href="mapsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all hover:opacity-90 self-start"
+              style="background-color: var(--brand-blue); color: #fff;"
+            >
+              <Icon name="mdi:map-search" size="17" />
+              Open in Google Maps
+            </a>
+          </div>
+
+          <div class="bg-surface border border-theme rounded-xl p-5">
+            <div class="text-xs font-semibold text-muted mb-1">Customer Contact</div>
+            <div class="text-primary">{{ order.customer?.phone || 'N/A' }}</div>
+            <div class="text-muted text-xs mt-1">Call or text to confirm pickup time.</div>
+          </div>
+
+          <div class="bg-surface border border-theme rounded-xl p-5">
+            <div class="text-xs font-semibold text-muted mb-1">Notes</div>
+            <div class="text-primary text-sm">{{ order.notes || 'No special instructions provided.' }}</div>
           </div>
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <div class="text-xs font-semibold text-gray-500 mb-1">Notes</div>
-          <div class="text-brand-charcoal text-sm">
-            {{ order.notes || "No special instructions provided." }}
-          </div>
+      </div>
+
+      <div class="mt-8">
+        <SectionHeader title="Manage Order" subtitle="Update the status as you process the laundry" />
+        <div class="flex flex-wrap gap-3">
+          <AppButton label="Accept Order" variant="primary" type="button" @click="setStatus('washing')" :disabled="order.status !== 'pending'" />
+          <AppButton label="Mark Ready" variant="outline" type="button" @click="setStatus('ready')" :disabled="order.status !== 'washing'" />
+          <AppButton label="Mark Delivered" variant="outline" type="button" @click="setStatus('delivered')" :disabled="order.status !== 'ready'" />
+          <AppButton label="Cancel Order" variant="outline" type="button" @click="setStatus('cancelled')" :disabled="order.status === 'delivered' || order.status === 'cancelled'" />
         </div>
       </div>
-    </div>
 
-    <div class="mt-8">
-      <SectionHeader title="Manage Order" subtitle="Update the status as you process the laundry" />
-      <div class="flex flex-wrap gap-3">
-        <AppButton
-          label="Accept Order"
-          variant="primary"
-          type="button"
-          @click="setStatus('washing')"
-        />
-        <AppButton
-          label="Mark Ready"
-          variant="outline"
-          type="button"
-          @click="setStatus('ready')"
-        />
-        <AppButton
-          label="Mark Delivered"
-          variant="outline"
-          type="button"
-          @click="setStatus('delivered')"
-        />
-        <AppButton
-          label="Cancel Order"
-          variant="outline"
-          type="button"
-          @click="setStatus('cancelled')"
-        />
+      <div class="mt-8">
+        <OrderFlowTimeline :status="order.status" :current-index="currentFlowIndex" />
       </div>
-      <div class="mt-4 text-xs text-gray-500">
-        These actions only update the status in this demo UI.
-      </div>
-    </div>
 
-    <div class="mt-8">
-      <OrderFlowTimeline
-        :status="order.status"
-        :current-index="currentFlowIndex"
-      />
-    </div>
-
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <OrderMessagesPanel
-        :order-id="order.id"
-        current-role="provider"
-        sender-name="Ocean Breeze Laundry"
-        other-party-label="customer"
-      />
-      <div>
-        <SectionHeader title="Platform activity" subtitle="Visible to customer & admin" />
-        <ActivityFeed
-          :items="orderActivities"
-          order-link-prefix="/provider/order"
+      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <OrderMessagesPanel
+          :order-id="order.id"
+          current-role="provider"
+          :sender-name="providerName"
+          :other-party-label="order.customer?.full_name ?? 'Customer'"
         />
+        <div>
+          <SectionHeader title="Platform activity" />
+          <ActivityFeed :items="orderActivities" order-link-prefix="/provider/order" />
+        </div>
       </div>
-    </div>
 
-    <div class="mt-8">
-      <SectionHeader title="Services" subtitle="What needs processing" />
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ServiceCard
-          v-for="srv in order.services"
-          :key="srv.title"
-          :title="srv.title"
-          :price="srv.price"
-          :description="srv.description"
-        />
+      <div class="mt-8">
+        <SectionHeader title="Services" subtitle="What needs processing" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ServiceCard
+            v-for="srv in order.order_services"
+            :key="srv.id"
+            :title="srv.title"
+            :price="srv.price"
+            :description="srv.description"
+          />
+        </div>
       </div>
-    </div>
+    </template>
+
+    <div v-else class="text-center py-16 text-muted">Order not found.</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRoute } from "vue-router";
-import { computed } from "vue";
-import { useProviderOrders } from "~/composables/useProviderOrders";
-import { usePlatform } from "~/composables/usePlatform";
-import type { ProviderOrderStatus } from "~/data/platform";
+import type { OrderStatus } from '~/types/supabase'
 
-const route = useRoute();
-const { getOrderById, updateOrderStatus, getFlowStepIndex } = useProviderOrders();
-const { recentActivities } = usePlatform();
+const route = useRoute()
+const { profile } = useAuth()
+const { getOrderById, updateOrderStatus, getFlowStepIndex, recentActivities, loadAll } = useProviderOrders()
+const { success } = useToast()
 
-const routeId = computed(() => String(route.params.id ?? ""));
+const loading = ref(true)
+const routeId = computed(() => String(route.params.id ?? ''))
 
-const order = computed(() => {
-  const existing = getOrderById(routeId.value);
-  return (
-    existing ?? {
-      id: routeId.value || "EF-0000",
-      provider: "Ocean Breeze Laundry",
-      customerName: "Selected Customer",
-      status: "pending" as ProviderOrderStatus,
-      pickupDate: "2026-05-29",
-      pickupTime: "09:15",
-      pickupAddress: "Nairobi",
-      customerPhone: "+254 700 000 000",
-      totalEstimate: "KSh 0",
-      services: [],
-    }
-  );
-});
+onMounted(async () => {
+  await loadAll()
+  loading.value = false
+})
+
+const order = computed(() => getOrderById(routeId.value))
+const currentFlowIndex = computed(() => order.value ? getFlowStepIndex(order.value.status) : -1)
+const providerName = computed(() => order.value?.provider?.name ?? profile.value?.full_name ?? 'Provider')
 
 const orderActivities = computed(() =>
-  recentActivities.value.filter((a) => a.orderId === order.value.id),
-);
+  recentActivities.value
+    .filter((a) => a.order_id === routeId.value)
+    .map((a) => ({
+      id: a.id,
+      orderId: a.order_id,
+      type: a.type,
+      title: a.title,
+      detail: a.detail,
+      at: a.created_at,
+      actorName: a.actor_name,
+    }))
+)
 
-const setStatus = (next: ProviderOrderStatus) => {
-  updateOrderStatus(order.value.id, next);
-};
-
-const currentFlowIndex = computed(() => getFlowStepIndex(order.value.status));
+const setStatus = async (next: OrderStatus) => {
+  if (!order.value) return
+  await updateOrderStatus(order.value.id, next)
+  success(`Order status updated to ${next}.`)
+}
 
 const mapsUrl = computed(() => {
-  const encoded = encodeURIComponent(order.value.pickupAddress);
-  return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-});
+  const encoded = encodeURIComponent(order.value?.pickup_address ?? '')
+  return `https://www.google.com/maps/search/?api=1&query=${encoded}`
+})
 
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role', 'provider-onboarding'] })
 </script>
-

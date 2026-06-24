@@ -1,20 +1,36 @@
-import { usePlatform } from "~/composables/usePlatform";
-import type { ProviderOrderStatus } from "~/data/platform";
+import type { OrderStatus } from '~/types/supabase'
 
-/** Provider-facing orders — same shared platform store as customer & admin */
 export function useProviderOrders() {
-  const platform = usePlatform();
+  const { profile, userName } = useAuth()
+  const platform = usePlatform()
 
-  const orders = computed(() => platform.orders.value);
+  // Provider-scoped orders
+  const orders = computed(() =>
+    platform.orders.value.filter((o) => o.provider_id === profile.value?.provider_id)
+  )
 
-  const stats = platform.providerStats;
+  const stats = computed(() => ({
+    incoming: orders.value.filter((o) => o.status === 'pending').length,
+    washing: orders.value.filter((o) => o.status === 'washing').length,
+    ready: orders.value.filter((o) => o.status === 'ready').length,
+    delivered: orders.value.filter((o) => o.status === 'delivered').length,
+  }))
 
-  const incomingOrders = platform.providerIncomingOrders;
+  const incomingOrders = computed(() =>
+    orders.value.filter((o) => ['pending', 'washing', 'ready'].includes(o.status))
+  )
 
-  const getOrderById = platform.getOrderById;
+  const getOrderById = (id: string) =>
+    orders.value.find((o) => o.id.toLowerCase() === id.toLowerCase()) ?? null
 
-  const updateOrderStatus = (id: string, status: ProviderOrderStatus) =>
-    platform.updateOrderStatus(id, status, "provider", "Ocean Breeze Laundry");
+  const updateOrderStatus = (id: string, status: OrderStatus) =>
+    platform.updateOrderStatus(id, status, 'provider', userName.value)
+
+  const recentActivities = computed(() =>
+    platform.recentActivities.value.filter((a) =>
+      orders.value.some((o) => o.id === a.order_id)
+    )
+  )
 
   return {
     orders,
@@ -26,8 +42,9 @@ export function useProviderOrders() {
     updateOrderStatus,
     getNextStatus: platform.getNextStatus,
     getFlowStepIndex: platform.getFlowStepIndex,
-    recentActivities: platform.recentActivities,
+    recentActivities,
     addMessage: platform.addMessage,
     getMessagesForOrder: platform.getMessagesForOrder,
-  };
+    loadAll: platform.loadAll,
+  }
 }

@@ -22,3 +22,15 @@ logs
 .env
 .env.*
 !.env.example
+
+##DB FILES
+
+fix-admin-orders.sql
+fix-profiles-rls.sql
+fix-provider-setup.sql
+origin.sql
+profile-order-access.sql
+provider-listing.sql
+schema.sql
+fix-contact-rls.sql
+add-customer-addresses.sql

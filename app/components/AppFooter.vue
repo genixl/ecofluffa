@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 const serviceLinks = [
-  { to: '/browse', label: 'Browse Providers' },
+  { to: '/customer/browse', label: 'Browse Providers' },
   { to: '/order/new', label: 'Book a Pickup' },
   { to: '/customer/orders', label: 'Track Orders' },
 ]

@@ -81,10 +81,11 @@
             <div v-if="formError" class="text-red-500 text-sm font-medium">{{ formError }}</div>
 
             <AppButton
-              :label="submitted ? 'Message Sent ✓' : 'Send Message'"
+              :label="submitted ? 'Message Sent ✓' : (submitting ? 'Sending…' : 'Send Message')"
               variant="primary"
               type="submit"
-              :disabled="submitted"
+              :disabled="submitted || submitting"
+              :loading="submitting"
             />
           </form>
         </div>
@@ -112,12 +113,14 @@
 import { useContactSubmissions } from '~/composables/useContactSubmissions'
 
 const { submitContactForm } = useContactSubmissions()
+const { success, error: toastError } = useToast()
 
 const name = ref('')
 const email = ref('')
 const subject = ref('')
 const message = ref('')
 const submitted = ref(false)
+const submitting = ref(false)
 const formError = ref('')
 
 const subjects = [
@@ -152,19 +155,29 @@ const channels = [
 
 const faqs = [
   { q: 'How do I track my order?', a: 'Log in and go to My Orders. Each order has a live status timeline you can follow.' },
-  { q: 'Can I cancel my order?', a: 'Yes — open the order and tap Cancel before the provider has picked it up.' },
+  { q: 'Can I cancel my order?', a: 'Yes,open the order and tap Cancel before the provider has picked it up.' },
   { q: 'How long does pickup take?', a: 'Providers typically confirm and arrange pickup within 2–4 hours of booking.' },
   { q: 'What if my clothes are damaged?', a: 'File a claim through Support within 48 hours of delivery and we\'ll investigate.' },
 ]
 
-const submit = () => {
+const submit = async () => {
   formError.value = ''
   if (!name.value || !email.value || !subject.value || !message.value) {
     formError.value = 'Please fill in all fields before submitting.'
     return
   }
-  submitContactForm(name.value, email.value, subject.value, message.value)
+  submitting.value = true
+  const { error } = await submitContactForm(name.value, email.value, subject.value, message.value)
+  submitting.value = false
+ 
+  if (error) {
+    formError.value = error
+    toastError('Failed to send message. Please try again.')
+    return
+  }
+
   submitted.value = true
+  success('Message sent! Our team will get back to you.')
 }
 
 useHead({ title: 'Contact Support – EcoFluffa' })

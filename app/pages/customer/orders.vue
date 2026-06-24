@@ -1,53 +1,30 @@
 <template>
   <div>
-    <SectionHeader
-      title="Your Orders"
-      subtitle="Search, filter, and track every pickup in one place"
-    />
+    <SectionHeader title="My Orders" subtitle="All your laundry orders in one place" />
 
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <InputField
-          label="Search orders"
-          type="text"
-          placeholder="Order ID, provider, or address"
-          v-model="searchQuery"
-        />
-        <div>
-          <label class="block text-brand-charcoal mb-3 font-semibold text-sm">
-            Status
-          </label>
-          <select
-            v-model="statusFilter"
-            class="w-full border-2 border-gray-300 bg-brand-white text-brand-charcoal px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue focus:ring-opacity-20 transition-all duration-200"
-          >
-            <option value="all">All statuses</option>
-            <option v-for="s in statusOptions" :key="s" :value="s">
-              {{ statusLabels[s] }}
-            </option>
-          </select>
-        </div>
-      </div>
-      <div class="text-gray-500 text-sm mt-4">
-        {{ filteredOrders.length }} order{{ filteredOrders.length === 1 ? "" : "s" }} found
-      </div>
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <SkeletonCard v-for="i in 6" :key="i" :rows="3" :row-height="20" class="bg-surface border border-theme rounded-xl p-6 shadow-sm" />
     </div>
 
-    <div v-if="filteredOrders.length === 0" class="bg-white rounded-xl border border-gray-200 p-10 text-center">
-      <div class="text-brand-charcoal font-semibold">No orders match your filters</div>
-      <div class="text-gray-500 text-sm mt-2">Clear search or try a different status.</div>
+    <div v-else-if="orders.length === 0" class="bg-surface border border-theme rounded-xl p-10 text-center">
+      <div class="text-primary font-semibold">No orders yet</div>
+      <div class="text-muted text-sm mt-2">Book your first laundry pickup to get started.</div>
+      <NuxtLink to="/customer/services" class="inline-block mt-4 bg-brand-orange text-white px-5 py-2 rounded-lg text-sm font-semibold">
+        Browse Services
+      </NuxtLink>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <OrderCard
-        v-for="o in filteredOrders"
+        v-for="o in orders"
         :key="o.id"
         :orderId="o.id"
-        :provider="o.provider"
+        :provider="o.provider?.name ?? ''"
         :status="o.status"
-        :date="o.pickupDate"
+        :date="o.pickup_date"
         role="customer"
-        :pickup-address="o.pickupAddress"
+        :pickup-address="o.pickup_address"
         :to="`/customer/order/${o.id}`"
       />
     </div>
@@ -55,35 +32,13 @@
 </template>
 
 <script setup lang="ts">
-import { useCustomerOrders } from "~/composables/useCustomerOrders";
-import type { ProviderOrderStatus } from "~/data/providerOrders";
+const { orders, loadAll } = useCustomerOrders()
+const loading = ref(true)
 
-const { orders, statusLabels } = useCustomerOrders();
+onMounted(async () => {
+  await loadAll()
+  loading.value = false
+})
 
-const searchQuery = ref("");
-const statusFilter = ref<string>("all");
-
-const statusOptions: ProviderOrderStatus[] = [
-  "pending",
-  "washing",
-  "ready",
-  "delivered",
-  "cancelled",
-];
-
-const filteredOrders = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
-  return orders.value.filter((o) => {
-    const matchesStatus =
-      statusFilter.value === "all" || o.status === statusFilter.value;
-    const matchesSearch =
-      !q ||
-      o.id.toLowerCase().includes(q) ||
-      o.provider.toLowerCase().includes(q) ||
-      o.pickupAddress.toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
-});
-
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>

@@ -1,51 +1,40 @@
 <template>
   <div>
-    <SectionHeader title="Providers" subtitle="Approve or remove provider accounts" />
+    <SectionHeader title="Providers" subtitle="All registered laundry providers on the platform" />
 
-    <div class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
+    <div v-if="loading" class="text-muted text-sm py-10 text-center">Loading providers…</div>
+
+    <div v-else-if="providers.length === 0" class="bg-surface border border-theme rounded-xl p-10 text-center text-muted">
+      No providers registered yet.
+    </div>
+
+    <div v-else class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
       <table class="w-full text-left">
         <thead class="bg-subtle border-b border-theme">
           <tr>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Provider</th>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Location</th>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Rating</th>
-            <th class="p-4 text-xs font-semibold text-muted uppercase">Status</th>
-            <th class="p-4 text-xs font-semibold text-muted uppercase">Actions</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Reviews</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Visibility</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Joined</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-border-theme">
-          <tr v-for="p in providers" :key="p.name" class="hover:bg-subtle transition-colors">
+          <tr v-for="p in providers" :key="p.id" class="hover:bg-subtle transition-colors">
             <td class="p-4 font-semibold text-primary">{{ p.name }}</td>
-            <td class="p-4 text-sm text-muted">{{ p.location }}</td>
+            <td class="p-4 text-sm text-muted">{{ p.location || 'N/A' }}</td>
             <td class="p-4 text-sm text-primary">{{ p.rating }} / 5</td>
+            <td class="p-4 text-sm text-muted">{{ p.review_count }}</td>
             <td class="p-4 text-sm">
               <span
                 class="px-2 py-0.5 rounded-full text-xs font-semibold"
-                :class="{
-                  'bg-green-100 text-green-700': p.status === 'Approved',
-                  'bg-brand-orange/10 text-brand-orange': p.status === 'Pending',
-                  'bg-red-100 text-red-600': p.status === 'Removed',
-                }"
+                :class="p.is_listed ? 'bg-green-100 text-green-700' : 'bg-brand-orange/10 text-brand-orange'"
               >
-                {{ p.status }}
+                {{ p.is_listed ? 'Listed' : 'Not listed' }}
               </span>
             </td>
-            <td class="p-4">
-              <div class="flex flex-wrap gap-3">
-                <AppButton
-                  label="Approve"
-                  variant="outline"
-                  type="button"
-                  @click="approve(p.name)"
-                />
-                <AppButton
-                  label="Remove"
-                  variant="outline"
-                  type="button"
-                  @click="remove(p.name)"
-                />
-              </div>
-            </td>
+            <td class="p-4 text-sm text-muted">{{ formatDate(p.created_at) }}</td>
           </tr>
         </tbody>
       </table>
@@ -54,28 +43,16 @@
 </template>
 
 <script setup lang="ts">
-type ProviderRow = {
-  name: string;
-  location: string;
-  rating: number;
-  status: "Pending" | "Approved" | "Removed";
-};
+const { providers, loadProviders } = useAdminPlatform()
+const loading = ref(true)
 
-const providers = ref<ProviderRow[]>([
-  { name: "GreenLeaf Cleaners", location: "Westside", rating: 4.5, status: "Pending" },
-  { name: "CitySpin Laundromat", location: "Downtown", rating: 4.3, status: "Approved" },
-  { name: "RoyalRinse Laundry", location: "East Heights", rating: 4.2, status: "Pending" },
-]);
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 
-const approve = (name: string) => {
-  const p = providers.value.find((x) => x.name === name);
-  if (p) p.status = "Approved";
-};
+onMounted(async () => {
+  await loadProviders()
+  loading.value = false
+})
 
-const remove = (name: string) => {
-  const p = providers.value.find((x) => x.name === name);
-  if (p) p.status = "Removed";
-};
-
-definePageMeta({ layout: "dashboard" });
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
 </script>

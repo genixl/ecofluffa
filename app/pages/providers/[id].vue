@@ -41,13 +41,13 @@
                     style="background-color: var(--brand-blue-light); color: var(--brand-blue);">
                     <Icon name="mdi:star" size="16" style="color: #fbbf24;" />
                     {{ provider.rating }}
-                    <span class="font-normal text-xs" style="color: var(--text-muted);">({{ provider.reviewCount }} reviews)</span>
+                    <span class="font-normal text-xs" style="color: var(--text-muted);">({{ provider.review_count }} reviews)</span>
                   </div>
                   <!-- Pickup fee -->
                   <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium"
                     style="background-color: var(--bg-subtle); color: var(--text-muted); border: 1px solid var(--border-color);">
                     <Icon name="mdi:truck-delivery-outline" size="16" />
-                    {{ provider.pickupFee }}
+                    {{ provider.pickup_fee }}
                   </div>
                 </div>
               </div>
@@ -70,32 +70,32 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
-              v-for="offer in provider.offers"
-              :key="offer.serviceId"
+              v-for="offer in offers"
+              :key="offer.service_id"
               class="rounded-2xl p-6 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-              :style="selectedServiceId === offer.serviceId
+              :style="selectedServiceId === offer.service_id
                 ? 'background-color: var(--brand-blue-light); border: 2px solid var(--brand-blue); box-shadow: var(--shadow-md);'
                 : 'background-color: var(--bg-surface); border: 2px solid var(--border-color); box-shadow: var(--shadow-sm);'"
-              @click="selectedServiceId = offer.serviceId"
+              @click="selectedServiceId = offer.service_id"
             >
               <div class="flex items-start justify-between gap-4 mb-3">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    :style="selectedServiceId === offer.serviceId
+                    :style="selectedServiceId === offer.service_id
                       ? 'background-color: var(--brand-blue); '
                       : 'background-color: var(--bg-subtle);'">
-                    <Icon :name="serviceIcon(offer.serviceId)" size="20"
-                      :style="selectedServiceId === offer.serviceId ? 'color: #fff;' : 'color: var(--brand-blue);'" />
+                    <Icon :name="serviceIcon(offer.service_id)" size="20"
+                      :style="selectedServiceId === offer.service_id ? 'color: #fff;' : 'color: var(--brand-blue);'" />
                   </div>
                   <div>
-                    <div class="font-bold" :style="selectedServiceId === offer.serviceId ? 'color: var(--brand-blue);' : 'color: var(--text-primary);'">
-                      {{ serviceName(offer.serviceId) }}
+                    <div class="font-bold" :style="selectedServiceId === offer.service_id ? 'color: var(--brand-blue);' : 'color: var(--text-primary);'">
+                      {{ offer.service?.title }}
                     </div>
-                    <div class="text-xs" style="color: var(--text-muted);">{{ serviceDesc(offer.serviceId) }}</div>
+                    <div class="text-xs" style="color: var(--text-muted);">{{ offer.service?.description }}</div>
                   </div>
                 </div>
                 <!-- Selected checkmark -->
-                <div v-if="selectedServiceId === offer.serviceId"
+                <div v-if="selectedServiceId === offer.service_id"
                   class="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                   style="background-color: var(--brand-blue);">
                   <Icon name="mdi:check" size="14" style="color: #fff;" />
@@ -108,7 +108,7 @@
                   <div class="text-xs" style="color: var(--text-muted);">{{ offer.unit }} · {{ offer.turnaround }}</div>
                 </div>
                 <NuxtLink
-                  :to="`/order/new?provider=${provider.id}&service=${offer.serviceId}`"
+                  :to="`/order/new?provider=${provider.id}&service=${offer.service_id}`"
                   class="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
                   style="background-color: var(--brand-orange);"
                   @click.stop
@@ -126,7 +126,7 @@
             class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-2xl px-6 py-4 flex items-center gap-4 shadow-xl"
             style="background-color: var(--brand-blue); color: #fff; min-width: 320px; max-width: 600px;">
             <div class="flex-1 min-w-0">
-              <div class="font-bold truncate">{{ serviceName(selectedServiceId) }}</div>
+              <div class="font-bold truncate">{{ offers.find(o => o.service_id === selectedServiceId)?.service?.title }}</div>
               <div class="text-xs opacity-80">with {{ provider.name }}</div>
             </div>
             <NuxtLink
@@ -144,32 +144,37 @@
 </template>
 
 <script setup lang="ts">
-import { HARDCODED_LAUNDRY_PROVIDERS } from '~/data/customerProviders'
-import { HARDCODED_LAUNDRY_SERVICES } from '~/data/customerServices'
-
 const route = useRoute()
+const { providers, providerServices, refreshCatalog } = useServices()
+
+onMounted(() => {
+  refreshCatalog()
+})
+
+watch(() => route.params.id, () => {
+  refreshCatalog()
+})
 
 const provider = computed(() =>
-  HARDCODED_LAUNDRY_PROVIDERS.find(p => p.id === route.params.id)
+  providers.value.find(p => p.id === route.params.id)
+)
+
+const offers = computed(() => 
+  providerServices.value.filter(ps => ps.provider_id === route.params.id)
 )
 
 const selectedServiceId = ref<string>('')
 
 // Pre-select first service when provider loads
 watchEffect(() => {
-  if (provider.value?.offers.length && !selectedServiceId.value) {
-    selectedServiceId.value = provider.value.offers[0].serviceId
+  if (offers.value.length && !selectedServiceId.value) {
+    selectedServiceId.value = offers.value[0].service_id
   }
 })
 
 const scrollToServices = () => {
   document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })
 }
-
-// Helpers to look up service metadata
-const getService = (id: string) => HARDCODED_LAUNDRY_SERVICES.find(s => s.id === id)
-const serviceName = (id: string) => getService(id)?.title ?? id.replace(/-/g, ' ')
-const serviceDesc = (id: string) => getService(id)?.description ?? ''
 
 const serviceIcon = (id: string) => {
   const icons: Record<string, string> = {
