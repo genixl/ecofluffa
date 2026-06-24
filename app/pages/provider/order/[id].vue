@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Skeleton loading -->
     <div v-if="loading" class="space-y-6">
       <SkeletonCard :rows="2" :row-height="36" />
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -23,7 +22,6 @@
         <SectionHeader title="Customer Details" subtitle="Where to pick up and drop off" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-          <!-- Pickup Address — highlighted card -->
           <div
             class="rounded-xl p-5 flex flex-col gap-3"
             style="background-color: var(--brand-blue-light); border: 2px solid var(--brand-blue);"
@@ -54,14 +52,12 @@
             </a>
           </div>
 
-          <!-- Customer Contact -->
           <div class="bg-surface border border-theme rounded-xl p-5">
             <div class="text-xs font-semibold text-muted mb-1">Customer Contact</div>
-            <div class="text-primary">{{ order.customer?.phone || '—' }}</div>
+            <div class="text-primary">{{ order.customer?.phone || 'N/A' }}</div>
             <div class="text-muted text-xs mt-1">Call or text to confirm pickup time.</div>
           </div>
 
-          <!-- Notes -->
           <div class="bg-surface border border-theme rounded-xl p-5">
             <div class="text-xs font-semibold text-muted mb-1">Notes</div>
             <div class="text-primary text-sm">{{ order.notes || 'No special instructions provided.' }}</div>

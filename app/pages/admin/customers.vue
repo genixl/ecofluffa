@@ -19,8 +19,8 @@
         </thead>
         <tbody class="divide-y divide-border-theme">
           <tr v-for="c in customers" :key="c.id" class="hover:bg-subtle transition-colors">
-            <td class="p-4 font-semibold text-primary">{{ c.full_name || '—' }}</td>
-            <td class="p-4 text-sm text-muted">{{ c.phone || '—' }}</td>
+            <td class="p-4 font-semibold text-primary">{{ c.full_name || 'N/A' }}</td>
+            <td class="p-4 text-sm text-muted">{{ c.phone || 'N/A' }}</td>
             <td class="p-4 text-sm text-muted">{{ formatDate(c.created_at) }}</td>
           </tr>
         </tbody>

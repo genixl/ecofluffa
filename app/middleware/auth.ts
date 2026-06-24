@@ -6,7 +6,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser()
   if (user.value) return
 
-  // Cookie/session can lag behind signInWithPassword — check session directly
+  // Cookie/session can lag behind signInWithPassword; check session directly
   const supabase = useSupabaseClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (session?.user) return

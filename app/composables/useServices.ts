@@ -1,7 +1,6 @@
 import type { Service, Provider, ProviderService } from '~/types/supabase'
 import { SERVICE_CATEGORIES, PROVIDER_PLACEHOLDER_LOCATION } from '~/types/supabase'
 
-/** Shown on customer browse — only published providers with at least one service. */
 export function isProviderVisibleOnPortal(
   provider: Provider,
   offersForProvider: ProviderService[]

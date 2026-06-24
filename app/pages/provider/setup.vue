@@ -18,7 +18,6 @@
     <div v-if="pageLoading" class="text-muted text-sm py-10 text-center">Loading…</div>
 
     <template v-else>
-      <!-- Personal -->
       <section class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-sm">
         <SectionHeader title="Your contact details" subtitle="Shown on orders and messages" />
         <InputField label="Your full name" type="text" v-model="contactName" placeholder="Jane Doe" />
@@ -33,7 +32,6 @@
         </div>
       </section>
 
-      <!-- Business -->
       <section class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-sm">
         <SectionHeader title="Business profile" subtitle="Public listing customers will browse" />
         <InputField label="Business name" type="text" v-model="businessName" placeholder="Ocean Breeze Laundry" />
@@ -45,7 +43,6 @@
         </div>
       </section>
 
-      <!-- Services -->
       <section class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-sm">
         <div class="flex items-end justify-between gap-4 mb-4">
           <SectionHeader
@@ -113,7 +110,6 @@
         </ul>
       </section>
 
-      <!-- Checklist + publish -->
       <section class="bg-surface border border-theme rounded-xl p-6 shadow-theme-md">
         <SectionHeader title="Publish to customer portal" subtitle="Make your business visible when you are ready" />
         <ul class="space-y-2 mb-6 text-sm">
@@ -134,7 +130,7 @@
         <div v-if="publishError" class="text-red-500 text-sm mb-3">{{ publishError }}</div>
 
         <AppButton
-          label="Publish — show my business to customers"
+          label="Publish: show my business to customers"
           variant="primary"
           type="button"
           :disabled="!canPublish || publishing"

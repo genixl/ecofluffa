@@ -5,7 +5,6 @@
       subtitle="Manage your orders, update service offerings, and track platform activity all in one place"
     />
 
-    <!-- Skeleton -->
     <div v-if="loading" class="space-y-6">
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <SkeletonCard v-for="i in 5" :key="i" :rows="2" :row-height="28" />
@@ -14,13 +13,11 @@
     </div>
 
     <template v-else>
-      <!-- Stat cards -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <CustomerStatCard label="Incoming" :value="stats.incoming" hint="Awaiting acceptance" />
         <CustomerStatCard label="Washing" :value="stats.washing" hint="In progress" />
         <CustomerStatCard label="Ready" :value="stats.ready" hint="Ready for delivery" />
         <CustomerStatCard label="Delivered" :value="stats.delivered" hint="Completed" />
-        <!-- Today's pickups — highlighted -->
         <div
           class="rounded-xl p-5 flex flex-col gap-1"
           :style="todayOrders.length
@@ -65,7 +62,6 @@
           </div>
         </div>
         <div>
-          <!-- Incoming Activity header with summaries -->
           <div class="flex items-center justify-between mb-4">
             <div>
               <div class="font-bold text-base" style="color: var(--text-primary);">Incoming Activity</div>
@@ -152,12 +148,10 @@ const todayOrders = computed(() =>
   incomingOrders.value.filter(o => o.pickup_date === today)
 )
 
-/** Count orders awaiting provider action */
 const ordersNeedingAction = computed(() =>
   incomingOrders.value.filter(o => o.status === 'pending').length
 )
 
-/** New messages today for provider */
 const newMessagesToday = computed(() => {
   const todayPrefix = today
   return recentActivities.value.filter(
@@ -165,7 +159,6 @@ const newMessagesToday = computed(() => {
   ).length
 })
 
-/** All provider activities with display shape */
 const providerActivity = computed(() =>
   recentActivities.value.slice(0, 10).map((a) => ({
     id: a.id,
@@ -206,7 +199,6 @@ const formatTime = (iso: string) => {
 const revenueEstimate = computed(() => {
   const delivered = orders.value.filter(o => o.status === 'delivered')
   if (!delivered.length) return 'No revenue yet'
-  // Extract numeric part from total_estimate strings like "KSh 500 per kg"
   const total = delivered.reduce((sum, o) => {
     const match = o.total_estimate.match(/[\d,]+/)
     return sum + (match ? parseInt(match[0].replace(/,/g, ''), 10) : 0)

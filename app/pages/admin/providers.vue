@@ -23,7 +23,7 @@
         <tbody class="divide-y divide-border-theme">
           <tr v-for="p in providers" :key="p.id" class="hover:bg-subtle transition-colors">
             <td class="p-4 font-semibold text-primary">{{ p.name }}</td>
-            <td class="p-4 text-sm text-muted">{{ p.location || '—' }}</td>
+            <td class="p-4 text-sm text-muted">{{ p.location || 'N/A' }}</td>
             <td class="p-4 text-sm text-primary">{{ p.rating }} / 5</td>
             <td class="p-4 text-sm text-muted">{{ p.review_count }}</td>
             <td class="p-4 text-sm">

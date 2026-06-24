@@ -8,21 +8,21 @@ import type {
 } from '~/types/supabase'
 import { ORDER_FLOW, STATUS_LABELS } from '~/types/supabase'
 
-// ── Realtime Singleton ─────────────────────────────────────
+
 let _realtimeChannel: any = null
 
 export function usePlatform() {
   const supabase = useSupabaseClient()
   const { profile } = useAuth()
 
-  // ── State ─────────────────────────────────────────────────
+
   const orders = useState<Order[]>('platform-orders', () => [])
   const activities = useState<OrderActivity[]>('platform-activities', () => [])
   const messages = useState<OrderMessage[]>('platform-messages', () => [])
   const ratings = useState<Rating[]>('platform-ratings', () => [])
   const loaded = useState<boolean>('platform-loaded', () => false)
 
-  // ── Fetch helpers ─────────────────────────────────────────
+
   const fetchOrders = async () => {
     const { data, error } = await supabase
       .from('orders')
@@ -68,15 +68,15 @@ export function usePlatform() {
     subscribeToRealtime()
   }
 
-  // ── Realtime ──────────────────────────────────────────────
+
   const subscribeToRealtime = () => {
-    if (_realtimeChannel) return // already subscribed
+    if (_realtimeChannel) return
 
     const currentRole = profile.value?.role ?? null
 
     _realtimeChannel = supabase
       .channel('platform-orders-realtime')
-      // ── Order status changes ──────────────────────────────
+
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders' },
@@ -89,19 +89,18 @@ export function usePlatform() {
           }
           const old = payload.old as { status?: string }
 
-          // Patch state
+
           const idx = orders.value.findIndex((o) => o.id === updated.id)
           if (idx !== -1) {
             orders.value[idx] = { ...orders.value[idx], ...updated }
           }
 
-          // Show toast only when status actually changed
+
           const newStatus = updated.status as OrderStatus
           const oldStatus = old?.status as OrderStatus | undefined
           if (!oldStatus || newStatus === oldStatus) return
 
-          // Determine if this update was made by someone else
-          // Providers update → customer should see toast (and vice versa)
+
           const { show } = useToast()
           const { notify } = useWebNotifications()
           const { addNotification } = useInAppNotifications()
@@ -109,7 +108,7 @@ export function usePlatform() {
           const orderId = updated.id
 
           if (currentRole === 'customer') {
-            // Customer sees status updates from providers
+
             const type = newStatus === 'cancelled' ? 'warning' : newStatus === 'delivered' ? 'success' : 'info'
             const msg = `Order ${orderId} is now ${label}`
             show(msg, type, 5000)
@@ -123,7 +122,7 @@ export function usePlatform() {
               createdAt: new Date().toISOString(),
             })
           } else if (currentRole === 'provider') {
-            // Provider sees customer-triggered changes (e.g. cancellation)
+
             if (newStatus === 'cancelled') {
               const msg = `Order ${orderId} was cancelled by the customer`
               show(msg, 'warning', 5000)
@@ -137,7 +136,7 @@ export function usePlatform() {
                 createdAt: new Date().toISOString(),
               })
             } else if (newStatus === 'pending') {
-              // New order assigned to provider
+
               const msg = `New order ${orderId} is waiting for your acceptance`
               show(msg, 'info', 5000)
               notify('EcoFluffa - New Order', { body: msg, tag: `order-status-${orderId}` })
@@ -151,7 +150,7 @@ export function usePlatform() {
               })
             }
           } else if (currentRole === 'admin') {
-            // Admin sees all status changes
+
             const msg = `Order ${orderId}: ${STATUS_LABELS[oldStatus] ?? oldStatus} to ${label}`
             show(msg, 'info', 4000)
             notify('EcoFluffa - Status Change', { body: msg, tag: `order-status-${orderId}` })
@@ -166,20 +165,20 @@ export function usePlatform() {
           }
         }
       )
-      // ── New in-app messages ───────────────────────────────
+
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'order_messages' },
         (payload) => {
           const msg = payload.new as OrderMessage
 
-          // Push into state if not already present (avoid duplicates from optimistic insert)
+          // skip if realtime already pushed this message
           const exists = messages.value.some((m) => m.id === msg.id)
           if (!exists) {
             messages.value.push(msg)
           }
 
-          // Show toast only for messages from the *other* role
+          // ignore messages sent by the current user
           if (!currentRole || msg.from_role === currentRole) return
 
           const { show } = useToast()
@@ -222,7 +221,7 @@ export function usePlatform() {
     loaded.value = false
   }
 
-  // ── Ratings ───────────────────────────────────────────────
+
   const getRatingForOrder = (orderId: string): Rating | null =>
     ratings.value.find((r) => r.order_id === orderId) ?? null
 
@@ -246,7 +245,7 @@ export function usePlatform() {
       .single()
     if (error) return false
     if (data) ratings.value.push(data as Rating)
-    // Refresh provider list so rating badge updates
+    // update the cached provider rating so the UI reflects the new score
     await supabase
       .from('providers')
       .select('id, rating, review_count')
@@ -264,7 +263,7 @@ export function usePlatform() {
     return true
   }
 
-  // ── Order helpers ─────────────────────────────────────────
+
   const getOrderById = (id: string) =>
     orders.value.find((o) => o.id.toLowerCase() === id.toLowerCase()) ?? null
 
@@ -279,13 +278,13 @@ export function usePlatform() {
 
     const prev = order.status
 
-    // Optimistic update
+
     order.status = status
 
-    // Persist to DB
+
     await supabase.from('orders').update({ status }).eq('id', id)
 
-    // Log activity
+
     const activity = {
       order_id: id,
       type: status === 'cancelled' ? 'admin' : 'status',
@@ -312,8 +311,7 @@ export function usePlatform() {
     const trimmed = body.trim()
     if (!trimmed) return
 
-    // ── Optimistic insert ─────────────────────────────────────
-    // Show the message instantly in the UI before the DB responds
+    // push a temporary message so the UI updates immediately
     const tempId = `temp-${Date.now()}`
     const optimistic: OrderMessage = {
       id: tempId,
@@ -325,7 +323,7 @@ export function usePlatform() {
     }
     messages.value.push(optimistic)
 
-    // ── Persist to DB ─────────────────────────────────────────
+
     const msg = {
       order_id: orderId,
       from_role: fromRole,
@@ -345,18 +343,18 @@ export function usePlatform() {
       const realAlreadyPushed = messages.value.some((m) => m.id === real.id)
 
       if (realAlreadyPushed && tempIdx !== -1) {
-        // Realtime beat us — real already in state, remove the temp
+        // realtime already added the real record, drop the temp
         messages.value.splice(tempIdx, 1)
       } else if (tempIdx !== -1) {
-        // Normal path — swap temp with real record
+        // swap the temp out for the real DB record
         messages.value[tempIdx] = real
       } else {
-        // Temp was already removed, just push real
+
         messages.value.push(real)
       }
     }
 
-    // Log activity
+
     const activity = {
       order_id: orderId,
       type: 'message',
@@ -444,14 +442,14 @@ export function usePlatform() {
     const { error: orderError } = await supabase.from('orders').insert(orderRow)
     if (orderError) return null
 
-    // Insert line items
+
     if (payload.services.length > 0) {
       await supabase.from('order_services').insert(
         payload.services.map((s) => ({ order_id: id, ...s }))
       )
     }
 
-    // Fetch provider name for activity
+
     const { data: providerData } = await supabase
       .from('providers')
       .select('name')
@@ -460,7 +458,7 @@ export function usePlatform() {
 
     const providerName = (providerData as { name: string } | null)?.name ?? 'Provider'
 
-    // Log activity
+
     const activity = {
       order_id: id,
       type: 'booking',
@@ -472,14 +470,14 @@ export function usePlatform() {
 
     await supabase.from('order_activities').insert(activity)
 
-    // Refresh orders
+
     await fetchOrders()
     await fetchActivities()
 
     return id
   }
 
-  // ── Computed stats ────────────────────────────────────────
+
   const recentActivities = computed(() =>
     [...activities.value].sort((a, b) => b.created_at.localeCompare(a.created_at))
   )

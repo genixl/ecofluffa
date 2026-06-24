@@ -15,7 +15,6 @@
       <div v-if="loadingData" class="text-center py-12 text-muted">Loading…</div>
 
       <template v-else>
-        <!-- Provider + Service info banner -->
         <div v-if="selectedProvider" class="rounded-2xl p-5 mb-8 flex items-center gap-4"
           style="background-color: var(--brand-blue-light); border: 1px solid var(--brand-blue);">
           <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color: var(--brand-blue);">
@@ -35,7 +34,6 @@
           class="rounded-2xl p-8 space-y-6"
           style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
 
-          <!-- Provider picker if not pre-filled -->
           <div v-if="!selectedProvider">
             <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Provider</label>
             <select v-model="providerIdLocal"
@@ -46,25 +44,22 @@
             </select>
           </div>
 
-          <!-- Service type -->
           <div>
             <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Service Type</label>
             <select v-model="serviceId"
               class="w-full px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
               style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);">
               <option v-for="s in availableServices" :key="s.service_id" :value="s.service_id">
-                {{ s.service?.title }} — KSh {{ s.price }} {{ s.unit }}
+                {{ s.service?.title }} | KSh {{ s.price }} {{ s.unit }}
               </option>
             </select>
           </div>
 
-          <!-- ── Pickup Address ── -->
           <div>
             <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">
               Pickup Address
             </label>
 
-            <!-- Saved addresses quick-pick -->
             <div v-if="addresses.length" class="mb-3">
               <label class="block text-xs font-medium mb-1.5" style="color: var(--text-muted);">Use a saved address</label>
               <div class="flex flex-wrap gap-2">
@@ -85,7 +80,6 @@
               </div>
             </div>
 
-            <!-- Address input + verify button -->
             <div class="flex gap-2">
               <input
                 id="pickup-address-input"
@@ -112,7 +106,7 @@
               Type your address then click <strong>Verify</strong> to confirm it on Google Maps.
             </p>
           </div>
-          <!-- ── End Pickup Address ── -->
+
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputField label="Pickup Date" type="date" v-model="pickupDate" />
@@ -123,7 +117,6 @@
 
           <div v-if="formError" class="text-red-500 text-sm font-medium">{{ formError }}</div>
 
-          <!-- Price estimate -->
           <div v-if="selectedOffer" class="rounded-xl p-4 flex items-center justify-between"
             style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
             <div>
@@ -221,10 +214,10 @@ const submitOrder = async () => {
     pickup_date: pickupDate.value,
     pickup_time: pickupTime.value,
     pickup_address: pickupAddress.value,
-    total_estimate: offer ? `KSh ${offer.price} ${offer.unit}` : '—',
+    total_estimate: offer ? `KSh ${offer.price} ${offer.unit}` : 'N/A',
     services: [{
       title: svc?.title ?? serviceId.value,
-      price: offer ? `KSh ${offer.price}` : '—',
+      price: offer ? `KSh ${offer.price}` : 'N/A',
       description: svc?.description ?? '',
     }],
   })

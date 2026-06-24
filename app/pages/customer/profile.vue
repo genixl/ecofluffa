@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- ── Profile Info ── -->
     <SectionHeader
       title="Your Profile"
       subtitle="Only you can view and edit this information"
@@ -42,7 +41,6 @@
       </div>
     </form>
 
-    <!-- ── My Addresses ── -->
     <SectionHeader
       title="My Addresses"
       subtitle="Save your frequent pickup locations for faster booking"
@@ -52,7 +50,6 @@
       class="rounded-xl p-6 mb-6"
       style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);"
     >
-      <!-- Add new address form -->
       <div class="mb-6">
         <h3 class="text-sm font-bold mb-4" style="color: var(--text-primary);">Add New Address</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -76,7 +73,6 @@
                 class="flex-1 px-3 py-2.5 rounded-lg text-sm border outline-none transition-all"
                 style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);"
               />
-              <!-- Verify on Google Maps -->
               <a
                 v-if="newAddress.trim()"
                 :href="mapsUrl(newAddress)"
@@ -114,10 +110,8 @@
         </div>
       </div>
 
-      <!-- Divider -->
       <div class="border-t mb-5" style="border-color: var(--border-color);"></div>
 
-      <!-- Saved addresses list -->
       <div v-if="loadingAddresses" class="text-center py-6 text-sm" style="color: var(--text-muted);">
         Loading addresses…
       </div>
@@ -134,7 +128,6 @@
           class="flex items-start gap-3 rounded-xl p-4 transition-all"
           style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);"
         >
-          <!-- Icon -->
           <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
             :style="addr.is_default
               ? 'background-color: var(--brand-blue); color: #fff;'
@@ -143,7 +136,6 @@
             <Icon name="mdi:map-marker" size="16" />
           </div>
 
-          <!-- Details -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="font-semibold text-sm" style="color: var(--text-primary);">
@@ -158,9 +150,7 @@
             <p class="text-xs mt-0.5 truncate" style="color: var(--text-muted);">{{ addr.address }}</p>
           </div>
 
-          <!-- Actions -->
           <div class="flex items-center gap-2 shrink-0">
-            <!-- Verify on Maps -->
             <a
               :href="mapsUrl(addr.address)"
               target="_blank"
@@ -172,7 +162,6 @@
               <Icon name="mdi:map-search" size="16" />
             </a>
 
-            <!-- Set default -->
             <button
               v-if="!addr.is_default"
               type="button"
@@ -184,7 +173,6 @@
               <Icon name="mdi:star-outline" size="16" />
             </button>
 
-            <!-- Delete -->
             <button
               type="button"
               title="Delete"
@@ -215,7 +203,6 @@ const {
 } = useAddresses()
 const { success, error: toastError } = useToast()
 
-// ── Profile form ──────────────────────────────────────────────
 const fullName = ref('')
 const phone = ref('')
 const saving = ref(false)
@@ -256,7 +243,6 @@ const save = async () => {
   success('Profile updated.')
 }
 
-// ── Address management ────────────────────────────────────────
 const newLabel = ref('')
 const newAddress = ref('')
 const newIsDefault = ref(false)

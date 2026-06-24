@@ -12,7 +12,7 @@ export function useAuth() {
 
   const profile = useState<Profile | null>('auth-profile', () => null)
   const loading = useState<boolean>('auth-loading', () => false)
-  /** Session user id — set from getSession(); useSupabaseUser() can lag behind this. */
+  // session user id; useSupabaseUser() can lag behind after login
   const authUserId = useState<string | null>('auth-user-id', () => null)
 
   const resolveUserId = (userId?: string) =>
@@ -24,7 +24,7 @@ export function useAuth() {
       profile.value = null
       return null
     }
-    // Drop cached profile from a different user (e.g. after logout/login)
+    // clear cached profile if we're loading a different user
     if (profile.value?.id && profile.value.id !== id) {
       profile.value = null
     }
@@ -48,7 +48,6 @@ export function useAuth() {
     }
   }
 
-  /** Create or refresh profile row (handles trigger delay / missing trigger). */
   const ensureProfile = async (
     userId: string,
     fullName: string,
@@ -148,7 +147,6 @@ export function useAuth() {
     return null
   }
 
-  /** Wait until Nuxt user ref or session is ready (avoids auth middleware bounce after login). */
   const waitForAuthReady = async (): Promise<boolean> => {
     if (user.value?.id) return true
     const id = await waitForSessionUserId()
@@ -221,7 +219,7 @@ export function useAuth() {
         return { error: 'Account created, but user data is missing. Please try logging in.', needsEmailConfirmation: false }
       }
 
-      // Session may be returned when email confirmation is disabled
+      // try to sign in immediately if no session was returned
       let userId = signUpData.session?.user?.id ?? newUser.id
       if (!signUpData.session) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({

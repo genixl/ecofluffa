@@ -181,7 +181,7 @@ const roleIcon = computed(() => {
 
 const logoTo = computed(() => (isLoggedIn.value ? getRedirectPath() : '/'))
 
-// No "Home" link when logged in — dashboard is the default via sidebar / logo
+// No "Home" link when logged in; dashboard is the default via sidebar / logo
 const navLinks = computed(() => {
   if (!isLoggedIn.value) {
     return [

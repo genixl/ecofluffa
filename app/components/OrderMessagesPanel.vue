@@ -55,7 +55,7 @@
           </div>
 
           <div class="flex flex-col max-w-[80%]" :class="isSelf(msg) ? 'items-end' : 'items-start'">
-            <!-- Sender name — only show at top of each group of consecutive messages from same person -->
+            <!-- Sender name: only show at top of each group of consecutive messages from same person -->
             <div
               v-if="shouldShowSenderName(group.messages, mi)"
               class="text-xs font-semibold mb-1 px-1"
@@ -146,7 +146,7 @@ const draft = ref("");
 const sending = ref(false);
 const scrollEl = ref<HTMLElement | null>(null);
 
-// effectiveRole is a computed — in the template it is auto-unwrapped (no .value needed)
+// effectiveRole is a computed; in the template it is auto-unwrapped (no .value needed)
 const effectiveRole = computed(() => props.currentRole ?? profile.value?.role ?? "customer");
 
 const thread = computed(() => getMessagesForOrder(props.orderId));

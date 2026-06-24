@@ -33,7 +33,7 @@ export function useAddresses() {
 
   const addAddress = async (payload: { label: string; address: string; is_default: boolean }) => {
     if (!profile.value?.id) return null
-    // If new address is default, clear existing defaults first
+    // clear any existing defaults before setting a new one
     if (payload.is_default) await clearDefault()
     const { data, error } = await supabase
       .from('customer_addresses')
@@ -73,7 +73,7 @@ export function useAddresses() {
     await updateAddress(id, { is_default: true })
   }
 
-  // ── helpers ──────────────────────────────────────────────────
+
   const clearDefault = async () => {
     if (!profile.value?.id) return
     await supabase

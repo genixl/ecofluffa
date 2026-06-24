@@ -206,7 +206,7 @@ export function useAdminPlatform() {
       const title = (s as { title: string }).title
       serviceCounts.set(title, (serviceCounts.get(title) ?? 0) + 1)
     }
-    let topService = '—'
+    let topService = 'N/A'
     let topServiceCount = 0
     for (const [title, count] of serviceCounts) {
       if (count > topServiceCount) {

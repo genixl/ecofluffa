@@ -1,15 +1,9 @@
-/**
- * useWebNotifications
- * Manages the Web Notification API (OS-level browser popups).
- * Works when the browser is open — even if the tab is in the background.
- */
 export function useWebNotifications() {
   const permission = useState<NotificationPermission | 'unsupported'>(
     'web-notif-permission',
     () => 'default'
   )
 
-  /** Call once on app mount to sync the current permission state */
   const init = () => {
     if (!import.meta.client || !('Notification' in window)) {
       permission.value = 'unsupported'
@@ -18,7 +12,6 @@ export function useWebNotifications() {
     permission.value = Notification.permission
   }
 
-  /** Ask the user for permission. Call this on a user gesture (button click). */
   const requestPermission = async (): Promise<NotificationPermission | 'unsupported'> => {
     if (!import.meta.client || !('Notification' in window)) {
       permission.value = 'unsupported'
@@ -29,16 +22,12 @@ export function useWebNotifications() {
     return result
   }
 
-  /**
-   * Send a native OS notification.
-   * Silently does nothing if permission is not granted.
-   */
   const notify = (
     title: string,
     options?: {
       body?: string
       icon?: string
-      tag?: string // same tag = replaces previous notification of that group
+      tag?: string
       silent?: boolean
     }
   ) => {
@@ -52,7 +41,7 @@ export function useWebNotifications() {
       silent: options?.silent ?? false,
     })
 
-    // Auto-focus the tab when the notification is clicked
+
     notif.onclick = () => {
       window.focus()
       notif.close()

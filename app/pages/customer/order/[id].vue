@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <!-- Rating section — only when delivered and not yet rated -->
+      <!-- Rating section: only when delivered and not yet rated -->
       <div
         v-if="order.status === 'delivered' && !existingRating"
         class="mt-8 rounded-2xl p-6 flex items-center justify-between gap-4"

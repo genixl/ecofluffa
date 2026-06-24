@@ -2,7 +2,6 @@
   <div>
     <SectionHeader title="All Orders" subtitle="Your assigned orders, click to manage" />
 
-    <!-- Status filter tabs -->
     <div class="flex flex-wrap gap-2 mb-6 border-b pb-4" style="border-color: var(--border-color);">
       <button
         v-for="tab in tabs"
@@ -23,7 +22,6 @@
       </button>
     </div>
 
-    <!-- Skeleton loading -->
     <div v-if="loading" class="space-y-3">
       <SkeletonCard v-for="i in 5" :key="i" :rows="1" :row-height="52" />
     </div>
@@ -54,7 +52,6 @@
           >
             <td class="p-4">
               <div class="font-semibold text-primary">{{ o.id }}</div>
-              <!-- Urgency badge inline -->
               <span
                 v-if="getUrgency(o)"
                 class="inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full"
@@ -65,7 +62,7 @@
                 {{ getUrgency(o) === 'overdue' ? '⚠ Overdue' : '📅 Today' }}
               </span>
             </td>
-            <td class="p-4 text-sm text-primary">{{ o.customer?.full_name ?? '—' }}</td>
+            <td class="p-4 text-sm text-primary">{{ o.customer?.full_name ?? 'N/A' }}</td>
             <td class="p-4"><OrderStatusBadge :status="o.status" /></td>
             <td class="p-4 text-sm text-muted">{{ o.pickup_date }}</td>
             <td class="p-4">
