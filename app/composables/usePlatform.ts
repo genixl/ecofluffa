@@ -33,6 +33,7 @@ export function usePlatform() {
         order_services(*)
       `)
       .order('created_at', { ascending: false })
+    if (error) console.warn('[fetchOrders]', error.message)
     if (!error && data) orders.value = data as Order[]
   }
 
@@ -42,6 +43,7 @@ export function usePlatform() {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100)
+    if (error) console.warn('[fetchActivities]', error.message)
     if (!error && data) activities.value = data as OrderActivity[]
   }
 
@@ -50,6 +52,7 @@ export function usePlatform() {
       .from('order_messages')
       .select('*')
       .order('created_at', { ascending: true })
+    if (error) console.warn('[fetchMessages]', error.message)
     if (!error && data) messages.value = data as OrderMessage[]
   }
 
@@ -57,6 +60,7 @@ export function usePlatform() {
     const { data, error } = await supabase
       .from('ratings')
       .select('*')
+    if (error) console.warn('[fetchRatings]', error.message)
     if (!error && data) ratings.value = data as Rating[]
   }
 
