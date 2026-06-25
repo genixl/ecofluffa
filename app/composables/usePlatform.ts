@@ -8,6 +8,15 @@ import type {
 } from '~/types/supabase'
 import { ORDER_FLOW, STATUS_LABELS } from '~/types/supabase'
 
+// Status-change messages shown to the provider when the customer/admin moves an order
+const PROVIDER_STATUS_MESSAGES: Partial<Record<OrderStatus, string>> = {
+  cancelled: 'was cancelled by the customer',
+  delivered: 'has been marked as delivered',
+  washing: 'is now being washed',
+  ready: 'is ready for pickup',
+  pending: 'is waiting for your acceptance',
+}
+
 
 let _realtimeChannel: any = null
 
@@ -77,90 +86,57 @@ export function usePlatform() {
     if (_realtimeChannel) return
 
     const currentRole = profile.value?.role ?? null
+    const currentProviderId = profile.value?.provider_id ?? null
 
     _realtimeChannel = supabase
       .channel('platform-orders-realtime')
 
+      // ── New order placed (INSERT) ──────────────────────────────────────────
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders' },
-        (payload) => {
-          const updated = payload.new as {
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        async (payload) => {
+          const newOrder = payload.new as {
             id: string
+            provider_id: string
+            customer_id: string
             status: string
-            pickup_time: string
-            pickup_address: string
-          }
-          const old = payload.old as { status?: string }
-
-
-          const idx = orders.value.findIndex((o) => o.id === updated.id)
-          if (idx !== -1) {
-            orders.value[idx] = { ...orders.value[idx], ...updated }
           }
 
-
-          const newStatus = updated.status as OrderStatus
-          const oldStatus = old?.status as OrderStatus | undefined
-          if (!oldStatus || newStatus === oldStatus) return
-
+          // Add the new order into local state (full re-fetch to get relations)
+          const existing = orders.value.some((o) => o.id === newOrder.id)
+          if (!existing) {
+            await fetchOrders()
+          }
 
           const { show } = useToast()
           const { notify } = useWebNotifications()
           const { addNotification } = useInAppNotifications()
-          const label = STATUS_LABELS[newStatus] ?? newStatus
-          const orderId = updated.id
+          const orderId = newOrder.id
 
-          if (currentRole === 'customer') {
-
-            const type = newStatus === 'cancelled' ? 'warning' : newStatus === 'delivered' ? 'success' : 'info'
-            const msg = `Order ${orderId} is now ${label}`
-            show(msg, type, 5000)
-            notify('EcoFluffa - Order Update', { body: msg, tag: `order-status-${orderId}` })
+          // Notify the provider whose order this belongs to
+          if (currentRole === 'provider' && currentProviderId === newOrder.provider_id) {
+            const msg = `New order ${orderId} has been placed and is awaiting your acceptance`
+            show(msg, 'info', 6000)
+            notify('EcoFluffa – New Order Received', { body: msg, tag: `new-order-${orderId}` })
             addNotification({
               type: 'order_update',
-              title: 'Order Status Updated',
+              title: '🛒 New Order Received',
               body: msg,
               orderId,
-              role: 'customer',
+              role: 'provider',
               createdAt: new Date().toISOString(),
             })
-          } else if (currentRole === 'provider') {
+          }
 
-            if (newStatus === 'cancelled') {
-              const msg = `Order ${orderId} was cancelled by the customer`
-              show(msg, 'warning', 5000)
-              notify('EcoFluffa - Order Cancelled', { body: msg, tag: `order-status-${orderId}` })
-              addNotification({
-                type: 'order_update',
-                title: 'Order Cancelled',
-                body: msg,
-                orderId,
-                role: 'provider',
-                createdAt: new Date().toISOString(),
-              })
-            } else if (newStatus === 'pending') {
-
-              const msg = `New order ${orderId} is waiting for your acceptance`
-              show(msg, 'info', 5000)
-              notify('EcoFluffa - New Order', { body: msg, tag: `order-status-${orderId}` })
-              addNotification({
-                type: 'order_update',
-                title: 'New Incoming Order',
-                body: msg,
-                orderId,
-                role: 'provider',
-                createdAt: new Date().toISOString(),
-              })
-            }
-          } else if (currentRole === 'admin') {
-
-            const msg = `Order ${orderId}: ${STATUS_LABELS[oldStatus] ?? oldStatus} to ${label}`
+          // Notify admin of every new order
+          if (currentRole === 'admin') {
+            const msg = `New order ${orderId} has been placed`
             show(msg, 'info', 4000)
-            notify('EcoFluffa - Status Change', { body: msg, tag: `order-status-${orderId}` })
+            notify('EcoFluffa – New Order', { body: msg, tag: `new-order-${orderId}` })
             addNotification({
               type: 'order_update',
-              title: 'Order Status Changed',
+              title: '🛒 New Order Placed',
               body: msg,
               orderId,
               role: 'admin',
@@ -170,6 +146,104 @@ export function usePlatform() {
         }
       )
 
+      // ── Order status updated (UPDATE) ──────────────────────────────────────
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          const updated = payload.new as {
+            id: string
+            status: string
+            provider_id: string
+            pickup_time: string
+            pickup_address: string
+          }
+          const old = payload.old as { status?: string }
+
+          const idx = orders.value.findIndex((o) => o.id === updated.id)
+          if (idx !== -1) {
+            orders.value[idx] = { ...orders.value[idx], ...updated }
+          }
+
+          const newStatus = updated.status as OrderStatus
+          const oldStatus = old?.status as OrderStatus | undefined
+          if (!oldStatus || newStatus === oldStatus) return
+
+          const { show } = useToast()
+          const { notify } = useWebNotifications()
+          const { addNotification } = useInAppNotifications()
+          const label = STATUS_LABELS[newStatus] ?? newStatus
+          const orderId = updated.id
+
+          // ── Customer: notify on any status change ──────────────────────────
+          if (currentRole === 'customer') {
+            const toastType =
+              newStatus === 'cancelled' ? 'warning'
+              : newStatus === 'delivered' ? 'success'
+              : 'info'
+            const statusEmoji =
+              newStatus === 'cancelled' ? '❌'
+              : newStatus === 'delivered' ? '✅'
+              : newStatus === 'ready' ? '📦'
+              : newStatus === 'washing' ? '🧺'
+              : '🔔'
+            const msg = `Order ${orderId} is now ${label}`
+            show(msg, toastType, 5000)
+            notify('EcoFluffa – Order Update', { body: msg, tag: `order-status-${orderId}` })
+            addNotification({
+              type: 'order_update',
+              title: `${statusEmoji} Order Status: ${label}`,
+              body: msg,
+              orderId,
+              role: 'customer',
+              createdAt: new Date().toISOString(),
+            })
+          }
+
+          // ── Provider: notify on every relevant status change ───────────────
+          else if (currentRole === 'provider' && currentProviderId === updated.provider_id) {
+            const statusDetail = PROVIDER_STATUS_MESSAGES[newStatus]
+            if (statusDetail) {
+              const toastType = newStatus === 'cancelled' ? 'warning' : newStatus === 'delivered' ? 'success' : 'info'
+              const statusEmoji =
+                newStatus === 'cancelled' ? '❌'
+                : newStatus === 'delivered' ? '✅'
+                : newStatus === 'ready' ? '📦'
+                : newStatus === 'washing' ? '🧺'
+                : newStatus === 'pending' ? '🛒'
+                : '🔔'
+              const msg = `Order ${orderId} ${statusDetail}`
+              show(msg, toastType, 5000)
+              notify(`EcoFluffa – Order ${label}`, { body: msg, tag: `order-status-${orderId}` })
+              addNotification({
+                type: 'order_update',
+                title: `${statusEmoji} Order ${label}`,
+                body: msg,
+                orderId,
+                role: 'provider',
+                createdAt: new Date().toISOString(),
+              })
+            }
+          }
+
+          // ── Admin: notify on every status change ───────────────────────────
+          else if (currentRole === 'admin') {
+            const msg = `Order ${orderId}: ${STATUS_LABELS[oldStatus] ?? oldStatus} → ${label}`
+            show(msg, 'info', 4000)
+            notify('EcoFluffa – Status Change', { body: msg, tag: `order-status-${orderId}` })
+            addNotification({
+              type: 'order_update',
+              title: '🔄 Order Status Changed',
+              body: msg,
+              orderId,
+              role: 'admin',
+              createdAt: new Date().toISOString(),
+            })
+          }
+        }
+      )
+
+      // ── New message received (INSERT) ──────────────────────────────────────
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'order_messages' },
@@ -192,13 +266,13 @@ export function usePlatform() {
           const senderLabel = msg.from_role.charAt(0).toUpperCase() + msg.from_role.slice(1)
           const toastMsg = `New message from ${senderLabel} (Order ${msg.order_id}): "${preview}"`
           show(toastMsg, 'info', 6000)
-          notify(`EcoFluffa - New message from ${senderLabel}`, {
+          notify(`EcoFluffa – New message from ${senderLabel}`, {
             body: `Order ${msg.order_id}: "${preview}"`,
             tag: `message-${msg.order_id}`,
           })
           addNotification({
             type: 'new_message',
-            title: `New message from ${senderLabel}`,
+            title: `💬 New message from ${senderLabel}`,
             body: `Order ${msg.order_id}: "${preview}"`,
             orderId: msg.order_id,
             role: currentRole as 'customer' | 'provider' | 'admin',
@@ -474,9 +548,24 @@ export function usePlatform() {
 
     await supabase.from('order_activities').insert(activity)
 
-
     await fetchOrders()
     await fetchActivities()
+
+    // ── Customer confirmation notification ────────────────────────────────────
+    const { addNotification } = useInAppNotifications()
+    const { show } = useToast()
+    const { notify } = useWebNotifications()
+    const confirmMsg = `Your order ${id} with ${providerName} has been placed successfully! We'll notify you when it's accepted.`
+    show(`Order ${id} placed! Awaiting provider acceptance.`, 'success', 6000)
+    notify('EcoFluffa – Order Placed', { body: confirmMsg, tag: `order-placed-${id}` })
+    addNotification({
+      type: 'order_update',
+      title: '🎉 Order Placed Successfully',
+      body: confirmMsg,
+      orderId: id,
+      role: 'customer',
+      createdAt: new Date().toISOString(),
+    })
 
     return id
   }
