@@ -83,48 +83,58 @@ export function useAuth() {
 
   const ensureProviderLink = async (userId: string, fullName: string) => {
     const current = profile.value ?? (await fetchProfile(userId))
-    if (!current || current.role !== 'provider' || current.provider_id) return
+    if (!current) return
 
-    const basePayload = {
-      name: `${fullName}'s Laundry`,
-      location: 'Update your location',
-      phone: '',
+    // Already linked — nothing to do
+    if (current.provider_id) return
+
+    // Step 1: Ensure the profile role is 'provider' in the DB before inserting
+    // the provider row. The RLS with_check on providers_insert_own reads
+    // get_my_role() which queries profiles, so the role must be set first.
+    if (current.role !== 'provider') {
+      const { error: roleError } = await supabase
+        .from('profiles')
+        .update({ role: 'provider' })
+        .eq('id', userId)
+
+      if (roleError) {
+        console.error('Failed to set provider role:', roleError.message)
+        return
+      }
+
+      // Refresh local profile so subsequent reads see the updated role
+      await fetchProfile(userId)
     }
 
-    let providerData: { id: string } | null = null
-    let providerError: { message: string } | null = null
-
-    const withListed = await supabase
+    // Step 2: Now insert the provider row — RLS with_check will pass
+    const { data: providerData, error: providerError } = await supabase
       .from('providers')
-      .insert({ ...basePayload, is_listed: false })
+      .insert({
+        name: `${fullName}'s Laundry`,
+        location: 'Update your location',
+        phone: '',
+        is_listed: false,
+      })
       .select('id')
       .single()
-
-    if (!withListed.error && withListed.data) {
-      providerData = withListed.data
-    } else if (withListed.error?.message?.includes('is_listed')) {
-      const fallback = await supabase
-        .from('providers')
-        .insert(basePayload)
-        .select('id')
-        .single()
-      providerData = fallback.data
-      providerError = fallback.error
-    } else {
-      providerError = withListed.error
-    }
 
     if (providerError || !providerData) {
       console.error('Failed to create provider record:', providerError?.message)
       return
     }
 
+    // Step 3: Link provider_id back to the profile
     const { error: linkError } = await supabase
       .from('profiles')
       .update({ provider_id: providerData.id })
       .eq('id', userId)
 
-    if (!linkError) await fetchProfile(userId)
+    if (linkError) {
+      console.error('Failed to link provider_id to profile:', linkError.message)
+      return
+    }
+
+    await fetchProfile(userId)
   }
 
   const getRedirectPath = (userRole?: UserRole | null) => {
@@ -216,7 +226,10 @@ export function useAuth() {
 
       const newUser = signUpData.user
       if (!newUser?.id) {
-        return { error: 'Account created, but user data is missing. Please try logging in.', needsEmailConfirmation: false }
+        return {
+          error: 'Account created, but user data is missing. Please try logging in.',
+          needsEmailConfirmation: false,
+        }
       }
 
       // try to sign in immediately if no session was returned

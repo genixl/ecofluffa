@@ -34,3 +34,4 @@ provider-listing.sql
 schema.sql
 fix-contact-rls.sql
 add-customer-addresses.sql
+fix-provider-rls.sql
