@@ -63,9 +63,9 @@ const typeIcon = (type: string) => {
 
 const dotStyle = (type: string) => {
   if (type === 'booking')  return 'background-color: var(--brand-blue-light); color: var(--brand-blue);'
-  if (type === 'status')   return 'background-color: #d1fae5; color: #065f46;'
-  if (type === 'message')  return 'background-color: #fef3c7; color: #92400e;'
-  if (type === 'admin')    return 'background-color: #fce7f3; color: #9d174d;'
+  if (type === 'status')   return 'background-color: #d1fae5; color: #065f46; dark:bg-green-900/30 dark:text-green-400'
+  if (type === 'message')  return 'background-color: #fef3c7; color: #92400e; dark:bg-yellow-900/30 dark:text-yellow-400'
+  if (type === 'admin')    return 'background-color: #fce7f3; color: #9d174d; dark:bg-pink-900/30 dark:text-pink-400'
   return 'background-color: var(--bg-subtle); color: var(--text-muted);'
 }
 

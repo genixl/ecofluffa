@@ -10,13 +10,14 @@
     <!-- Add / Edit form -->
     <div v-if="showForm" class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-md">
       <div class="font-bold text-xl mb-1" style="color: var(--brand-blue);">
-        {{ editingId ? 'Edit Service' : 'Add New Service' }}
+        {{ editingId ? 'Edit Service' : 'Add Service from Catalog' }}
       </div>
       <div class="text-muted text-sm mb-6">Enter the details of the service you want to offer.</div>
 
-      <div class="mb-4">
+      <!-- Existing service selection -->
+      <div v-if="!editingId" class="mb-4">
         <label class="block text-primary mb-2 font-semibold text-sm">Service</label>
-        <select v-model="form.service_id" :disabled="!!editingId"
+        <select v-model="form.service_id"
           class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all">
           <option value="">Select a service…</option>
           <option v-for="s in availableToAdd" :key="s.id" :value="s.id">{{ s.title }}</option>
@@ -95,6 +96,7 @@ const closeForm = () => {
 
 const save = async () => {
   if (!form.value.price || !form.value.unit || !form.value.turnaround) return
+  
   if (editingId.value) {
     await updateService(editingId.value, form.value.price, form.value.unit, form.value.turnaround)
   } else {

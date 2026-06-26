@@ -45,14 +45,43 @@
           </div>
 
           <div>
-            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Service Type</label>
-            <select v-model="serviceId"
-              class="w-full px-4 py-3 rounded-xl text-sm font-medium border transition-all outline-none"
-              style="background-color: var(--bg-subtle); border-color: var(--border-color); color: var(--text-primary);">
-              <option v-for="s in availableServices" :key="s.service_id" :value="s.service_id">
-                {{ s.service?.title }} | KSh {{ s.price }} {{ s.unit }}
-              </option>
-            </select>
+            <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Select Services</label>
+            <div v-if="availableServices.length === 0" class="text-muted text-sm py-4">
+              No services available for this provider.
+            </div>
+            <div v-else class="space-y-3">
+              <div
+                v-for="s in availableServices"
+                :key="s.service_id"
+                class="flex items-center gap-3 p-3 rounded-lg border transition-all"
+                :style="selectedServices.has(s.service_id)
+                  ? 'background-color: var(--brand-blue-light); border-color: var(--brand-blue);'
+                  : 'background-color: var(--bg-subtle); border-color: var(--border-color);'"
+              >
+                <input
+                  type="checkbox"
+                  :id="`service-${s.service_id}`"
+                  :checked="selectedServices.has(s.service_id)"
+                  @change="toggleService(s.service_id)"
+                  class="w-5 h-5 rounded cursor-pointer"
+                />
+                <label :for="`service-${s.service_id}`" class="flex-1 cursor-pointer">
+                  <div class="font-medium" style="color: var(--text-primary);">{{ s.service?.title }}</div>
+                  <div class="text-xs" style="color: var(--text-muted);">KSh {{ s.price }} {{ s.unit }}</div>
+                </label>
+                <div v-if="selectedServices.has(s.service_id)" class="flex items-center gap-2">
+                  <label class="text-xs" style="color: var(--text-muted);">Qty:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    :value="getServiceQuantity(s.service_id)"
+                    @input="setServiceQuantity(s.service_id, $event)"
+                    class="w-16 px-2 py-1 rounded text-sm border text-center"
+                    style="background-color: var(--bg-surface); border-color: var(--border-color); color: var(--text-primary);"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -117,13 +146,13 @@
 
           <div v-if="formError" class="text-red-500 text-sm font-medium">{{ formError }}</div>
 
-          <div v-if="selectedOffer" class="rounded-xl p-4 flex items-center justify-between"
+          <div v-if="selectedServices.size > 0" class="rounded-xl p-4 flex items-center justify-between"
             style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
             <div>
-              <div class="text-sm font-semibold" style="color: var(--text-primary);">Estimated Cost</div>
-              <div class="text-xs" style="color: var(--text-muted);">{{ selectedOffer.unit }} · turnaround {{ selectedOffer.turnaround }}</div>
+              <div class="text-sm font-semibold" style="color: var(--text-primary);">Estimated Total</div>
+              <div class="text-xs" style="color: var(--text-muted);">{{ selectedServices.size }} service{{ selectedServices.size > 1 ? 's' : '' }} selected</div>
             </div>
-            <div class="font-bold text-xl" style="color: var(--brand-orange);">KSh {{ selectedOffer.price }}</div>
+            <div class="font-bold text-xl" style="color: var(--brand-orange);">KSh {{ totalCost }}</div>
           </div>
 
           <div class="flex gap-4 pt-2">
@@ -165,15 +194,56 @@ const availableServices = computed(() => {
 })
 
 const serviceId = ref(queryServiceId.value)
+const selectedServices = ref<Set<string>>(new Set())
+const serviceQuantities = ref<Record<string, number>>({})
+
 watch(availableServices, (list) => {
   if (list.length && !list.some((s) => s.service_id === serviceId.value)) {
     serviceId.value = list[0]?.service_id ?? ''
+  }
+  // Auto-select the service from query param
+  if (queryServiceId.value && list.some((s) => s.service_id === queryServiceId.value)) {
+    selectedServices.value.add(queryServiceId.value)
+    serviceQuantities.value[queryServiceId.value] = 1
   }
 })
 
 const selectedOffer = computed(() =>
   availableServices.value.find((s) => s.service_id === serviceId.value) ?? null
 )
+
+const toggleService = (serviceId: string) => {
+  if (selectedServices.value.has(serviceId)) {
+    selectedServices.value.delete(serviceId)
+    delete serviceQuantities.value[serviceId]
+  } else {
+    selectedServices.value.add(serviceId)
+    serviceQuantities.value[serviceId] = 1
+  }
+}
+
+const getServiceQuantity = (serviceId: string) => {
+  return serviceQuantities.value[serviceId] || 1
+}
+
+const setServiceQuantity = (serviceId: string, event: Event) => {
+  const target = event.target as HTMLInputElement
+  const value = parseInt(target.value) || 1
+  serviceQuantities.value[serviceId] = Math.max(1, value)
+}
+
+const totalCost = computed(() => {
+  let total = 0
+  selectedServices.value.forEach((serviceId) => {
+    const service = availableServices.value.find((s) => s.service_id === serviceId)
+    if (service) {
+      const price = parseInt(service.price.replace(/,/g, ''), 10) || 0
+      const quantity = serviceQuantities.value[serviceId] || 1
+      total += price * quantity
+    }
+  })
+  return total.toLocaleString()
+})
 
 // Form fields
 const pickupAddress = ref('')
@@ -199,27 +269,31 @@ onMounted(async () => {
 const submitOrder = async () => {
   formError.value = ''
   if (!resolvedProviderId.value) { formError.value = 'Please select a provider.'; return }
-  if (!serviceId.value) { formError.value = 'Please select a service.'; return }
+  if (selectedServices.value.size === 0) { formError.value = 'Please select at least one service.'; return }
   if (!pickupAddress.value) { formError.value = 'Please enter your pickup address.'; return }
   if (!pickupDate.value) { formError.value = 'Please choose a pickup date.'; return }
   if (!pickupTime.value) { formError.value = 'Please choose a pickup time.'; return }
 
   submitting.value = true
 
-  const offer = selectedOffer.value
-  const svc = offer?.service
+  const servicesArray = Array.from(selectedServices.value).map((serviceId) => {
+    const service = availableServices.value.find((s) => s.service_id === serviceId)
+    const quantity = serviceQuantities.value[serviceId] || 1
+    const price = service ? parseInt(service.price.replace(/,/g, ''), 10) * quantity : 0
+    return {
+      title: service?.service?.title ?? serviceId,
+      price: `KSh ${price}`,
+      description: service?.service?.description ?? '',
+    }
+  })
 
   const id = await createOrder({
     provider_id: resolvedProviderId.value,
     pickup_date: pickupDate.value,
     pickup_time: pickupTime.value,
     pickup_address: pickupAddress.value,
-    total_estimate: offer ? `KSh ${offer.price} ${offer.unit}` : 'N/A',
-    services: [{
-      title: svc?.title ?? serviceId.value,
-      price: offer ? `KSh ${offer.price}` : 'N/A',
-      description: svc?.description ?? '',
-    }],
+    total_estimate: `KSh ${totalCost.value}`,
+    services: servicesArray,
   })
 
   submitting.value = false

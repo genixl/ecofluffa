@@ -12,8 +12,8 @@
       <div class="flex items-start justify-between gap-6">
         <div>
           <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
-          <div class="text-brand-charcoal mt-2">Customer Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}</div>
-          <div class="text-brand-charcoal text-sm mt-1">Customer: {{ order.customer?.full_name }}</div>
+          <div class="text-primary mt-2">Customer Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}</div>
+          <div class="text-primary text-sm mt-1">Customer: {{ order.customer?.full_name }}</div>
         </div>
         <OrderStatusBadge :status="order.status" />
       </div>
@@ -103,7 +103,7 @@
             :description="srv.description"
           />
         </div>
-      </div>
+      </div>  
     </template>
 
     <div v-else class="text-center py-16 text-muted">Order not found.</div>

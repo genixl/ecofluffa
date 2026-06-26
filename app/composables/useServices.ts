@@ -84,6 +84,31 @@ export function useServices() {
 
   const categories = SERVICE_CATEGORIES
 
+  const createService = async (serviceData: {
+    title: string
+    category: string
+    price_label: string
+    description: string
+    turnaround: string
+    popular?: boolean
+  }) => {
+    const insertData = {
+      title: serviceData.title,
+      category: serviceData.category,
+      price_label: serviceData.price_label,
+      description: serviceData.description,
+      turnaround: serviceData.turnaround,
+      popular: serviceData.popular ?? false,
+    } as any
+    const { data, error } = await supabase.from('services').insert(insertData).select('id').single() as any
+    
+    if (!error && data) {
+      await refreshCatalog()
+      return data.id as string
+    }
+    return null
+  }
+
   return {
     services,
     providers,
@@ -96,5 +121,6 @@ export function useServices() {
     getProviderById,
     categories,
     isProviderVisibleOnPortal,
+    createService,
   }
 }
