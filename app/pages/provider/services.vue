@@ -10,18 +10,49 @@
     <!-- Add / Edit form -->
     <div v-if="showForm" class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-md">
       <div class="font-bold text-xl mb-1" style="color: var(--brand-blue);">
-        {{ editingId ? 'Edit Service' : 'Add Service from Catalog' }}
+        {{ editingId ? 'Edit Service' : (isCustomService ? 'Add Custom Service' : 'Add Service from Catalog') }}
       </div>
       <div class="text-muted text-sm mb-6">Enter the details of the service you want to offer.</div>
 
-      <!-- Existing service selection -->
+      <!-- Service type toggle (only when adding, not editing) -->
       <div v-if="!editingId" class="mb-4">
+        <div class="flex gap-3">
+          <button 
+            @click="isCustomService = false"
+            :class="['px-4 py-2 rounded-lg font-semibold text-sm transition-all', !isCustomService ? 'bg-brand-blue text-white' : 'bg-surface border-2 border-theme text-primary']"
+          >
+            From Catalog
+          </button>
+          <button 
+            @click="isCustomService = true"
+            :class="['px-4 py-2 rounded-lg font-semibold text-sm transition-all', isCustomService ? 'bg-brand-blue text-white' : 'bg-surface border-2 border-theme text-primary']"
+          >
+            Custom Service
+          </button>
+        </div>
+      </div>
+
+      <!-- Existing service selection -->
+      <div v-if="!editingId && !isCustomService" class="mb-4">
         <label class="block text-primary mb-2 font-semibold text-sm">Service</label>
         <select v-model="form.service_id"
           class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all">
           <option value="">Select a service…</option>
           <option v-for="s in availableToAdd" :key="s.id" :value="s.id">{{ s.title }}</option>
         </select>
+      </div>
+
+      <!-- Custom service fields -->
+      <div v-if="!editingId && isCustomService" class="space-y-4 mb-4">
+        <InputField label="Service Title" type="text" placeholder="e.g. Leather Jacket Cleaning" v-model="form.title" />
+        <div>
+          <label class="block text-primary mb-2 font-semibold text-sm">Category</label>
+          <select v-model="form.category"
+            class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all">
+            <option v-for="cat in categories.filter(c => c !== 'All')" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+        </div>
+        <InputField label="Description" type="text" placeholder="Brief description of the service" v-model="form.description" />
       </div>
 
       <InputField label="Price (numbers only, e.g. 195)" type="text" placeholder="195" v-model="form.price" />
@@ -61,12 +92,14 @@
 import type { ProviderService } from '~/types/supabase'
 
 const { myServices, loading: profileLoading, fetchMyProvider, addService, updateService, removeService } = useProviderProfile()
-const { services, fetchAll } = useServices()
+const { profile } = useAuth()
+const { services, fetchAll, createService, categories } = useServices()
 
 const loading = ref(true)
 const showForm = ref(false)
 const editingId = ref<string | null>(null)
-const form = ref({ service_id: '', price: '', unit: '', turnaround: '' })
+const isCustomService = ref(false)
+const form = ref({ service_id: '', price: '', unit: '', turnaround: '', title: '', category: 'Everyday', description: '' })
 
 onMounted(async () => {
   await Promise.all([fetchMyProvider(), fetchAll()])
@@ -79,19 +112,22 @@ const availableToAdd = computed(() =>
 
 const openAdd = () => {
   editingId.value = null
-  form.value = { service_id: '', price: '', unit: '', turnaround: '' }
+  isCustomService.value = false
+  form.value = { service_id: '', price: '', unit: '', turnaround: '', title: '', category: 'Everyday', description: '' }
   showForm.value = true
 }
 
 const openEdit = (ps: ProviderService) => {
   editingId.value = ps.id
-  form.value = { service_id: ps.service_id, price: ps.price, unit: ps.unit, turnaround: ps.turnaround }
+  isCustomService.value = false
+  form.value = { service_id: ps.service_id, price: ps.price, unit: ps.unit, turnaround: '', title: '', category: 'Everyday', description: '' }
   showForm.value = true
 }
 
 const closeForm = () => {
   showForm.value = false
   editingId.value = null
+  isCustomService.value = false
 }
 
 const save = async () => {
@@ -100,8 +136,27 @@ const save = async () => {
   if (editingId.value) {
     await updateService(editingId.value, form.value.price, form.value.unit, form.value.turnaround)
   } else {
-    if (!form.value.service_id) return
-    await addService(form.value.service_id, form.value.price, form.value.unit, form.value.turnaround)
+    if (isCustomService.value) {
+      // Create custom service first
+      if (!form.value.title || !form.value.description) return
+      const providerId = profile.value?.provider_id || null
+      const serviceId = await createService({
+        title: form.value.title,
+        category: form.value.category,
+        price_label: `From KSh ${form.value.price} ${form.value.unit}`,
+        description: form.value.description,
+        turnaround: form.value.turnaround,
+        popular: false,
+        provider_id: providerId,
+      })
+      if (serviceId) {
+        await addService(serviceId, form.value.price, form.value.unit, form.value.turnaround)
+      }
+    } else {
+      // Add existing catalog service
+      if (!form.value.service_id) return
+      await addService(form.value.service_id, form.value.price, form.value.unit, form.value.turnaround)
+    }
   }
   closeForm()
 }

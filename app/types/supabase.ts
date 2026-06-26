@@ -28,13 +28,14 @@ export interface Provider {
 export const PROVIDER_PLACEHOLDER_LOCATION = 'Update your location'
 
 export interface Service {
-  id: string
+  id: string // UUID
   title: string
   category: string
   price_label: string
   description: string
   turnaround: string
   popular: boolean
+  provider_id: string | null // Optional provider ID for custom services
   created_at: string
 }
 

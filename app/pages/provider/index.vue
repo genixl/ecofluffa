@@ -91,7 +91,7 @@
 
           <div v-else class="flex flex-col gap-2">
             <div
-              v-for="item in providerActivity.slice(0, 10)"
+              v-for="item in providerActivity.slice(0, 5)"
               :key="item.id"
               class="rounded-xl px-4 py-3 flex items-start gap-3 transition-all hover:shadow-sm"
               style="background-color: var(--bg-surface); border: 1px solid var(--border-color);"
@@ -160,7 +160,7 @@ const newMessagesToday = computed(() => {
 })
 
 const providerActivity = computed(() =>
-  recentActivities.value.slice(0, 10).map((a) => ({
+  recentActivities.value.slice(0, 5).map((a) => ({
     id: a.id,
     orderId: a.order_id,
     type: a.type,

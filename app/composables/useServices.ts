@@ -91,6 +91,7 @@ export function useServices() {
     description: string
     turnaround: string
     popular?: boolean
+    provider_id?: string | null
   }) => {
     const insertData = {
       title: serviceData.title,
@@ -99,6 +100,7 @@ export function useServices() {
       description: serviceData.description,
       turnaround: serviceData.turnaround,
       popular: serviceData.popular ?? false,
+      provider_id: serviceData.provider_id ?? null,
     } as any
     const { data, error } = await supabase.from('services').insert(insertData).select('id').single() as any
     

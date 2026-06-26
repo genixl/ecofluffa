@@ -95,7 +95,7 @@
 
         <div v-else class="flex flex-col gap-2">
           <div
-            v-for="item in orderUpdates.slice(0, 8)"
+            v-for="item in orderUpdates.slice(0, 5)"
             :key="item.id"
             class="rounded-xl px-4 py-3 flex items-start gap-3 transition-all hover:shadow-sm"
             style="background-color: var(--bg-surface); border: 1px solid var(--border-color);"
@@ -151,7 +151,7 @@ const servicesLink = computed(() => {
 const orderUpdates = computed(() =>
   recentActivities.value
     .filter((a) => a.type === 'status' || a.type === 'message')
-    .slice(0, 8)
+    .slice(0, 5)
     .map((a) => ({
       id: a.id,
       orderId: a.order_id,

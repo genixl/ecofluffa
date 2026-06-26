@@ -2,14 +2,14 @@
   <div class="min-h-screen transition-theme flex flex-col" style="background-color: var(--bg-base); color: var(--text-primary);">
     <AppNavbar />
 
-    <div class="flex flex-1 relative">
+    <div class="flex flex-1 relative overflow-hidden">
       <Transition name="fade">
         <div v-if="sidebarOpen" class="sidebar-overlay lg:hidden" @click="sidebarOpen = false" />
       </Transition>
 
       <aside
-        class="fixed lg:static top-0 left-0 h-full lg:h-auto w-72 lg:w-64 z-50 lg:z-auto flex-shrink-0 transition-transform duration-300 ease-in-out flex flex-col"
-        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+        class="fixed top-0 left-0 h-full w-72 lg:w-64 z-[60] flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         style="background-color: var(--bg-surface); border-right: 1px solid var(--border-color); box-shadow: var(--shadow-md);"
       >
         <div class="flex items-center justify-between px-5 py-4 lg:hidden" style="border-bottom: 1px solid var(--border-color);">
@@ -48,7 +48,7 @@
           </div>
         </div>
 
-        <nav class="flex-1 px-3 pb-4 overflow-y-auto">
+        <nav class="flex-1 px-3 pb-4 overflow-y-auto overflow-x-hidden">
           <div class="flex flex-col gap-1">
             <NuxtLink
               v-for="item in navItems"
@@ -56,10 +56,9 @@
               :to="item.to"
               @click="sidebarOpen = false"
               class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200"
-              :style="item.active
+              :class="item.active
                 ? 'background-color: var(--brand-blue); color: #fff; box-shadow: 0 2px 8px rgba(15,76,129,0.3);'
-                : 'color: var(--text-muted);'"
-              :class="!item.active ? 'hover:bg-[var(--bg-subtle)]' : ''"
+                : 'color: var(--text-muted); hover:bg-[var(--bg-subtle)]'"
               :aria-current="item.active ? 'page' : undefined"
             >
               <Icon :name="item.icon" size="18" />
@@ -92,7 +91,6 @@
         </div>
 
         <div class="px-3 pb-5" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-
           <button
             @click="handleLogout"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 w-full hover:bg-[var(--bg-subtle)]"
@@ -104,7 +102,7 @@
         </div>
       </aside>
 
-      <div class="flex-1 flex flex-col min-w-0">
+      <div class="flex-1 flex flex-col min-w-0 lg:ml-64">
         <div
           class="lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-30"
           style="background-color: var(--bg-surface); border-bottom: 1px solid var(--border-color);"
@@ -146,7 +144,7 @@
           </div>
         </div>
 
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden">
           <slot />
         </main>
       </div>
