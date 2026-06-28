@@ -273,6 +273,7 @@ const navItems = computed<NavItem[]>(() => {
           ? [
               { to: '/admin', label: 'Overview', icon: 'mdi:chart-box' },
               { to: '/admin/providers', label: 'Providers', icon: 'mdi:store' },
+              { to: '/admin/custom-services', label: 'Custom Services', icon: 'mdi:clipboard-check-outline' },
               { to: '/admin/customers', label: 'Customers', icon: 'mdi:account-group' },
               { to: '/admin/contacts', label: 'Support', icon: 'mdi:headset' },
               { to: '/admin/reports', label: 'Reports', icon: 'mdi:chart-line' },

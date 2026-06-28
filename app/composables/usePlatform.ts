@@ -497,11 +497,23 @@ export function usePlatform() {
     pickup_date: string
     pickup_time: string
     pickup_address: string
+    customer_name?: string
+    customer_phone?: string
     notes?: string
     total_estimate: string
     services: Array<{ title: string; price: string; description: string }>
   }) => {
     if (!profile.value) return null
+
+    const { data: providerRow, error: providerError } = await supabase
+      .from('providers')
+      .select('name, approval_status, is_listed')
+      .eq('id', payload.provider_id)
+      .single()
+
+    if (providerError || !providerRow) return null
+    const p = providerRow as { name: string; approval_status: string; is_listed: boolean }
+    if (p.approval_status !== 'approved' || !p.is_listed) return null
 
     const id = `EF-${Date.now().toString().slice(-4)}`
 
@@ -513,7 +525,9 @@ export function usePlatform() {
       pickup_date: payload.pickup_date,
       pickup_time: payload.pickup_time,
       pickup_address: payload.pickup_address,
-      notes: payload.notes ?? '',
+      customer_name: payload.customer_name ?? profile.value.full_name,
+      customer_phone: payload.customer_phone ?? profile.value.phone,
+      notes: payload.notes ?? profile.value.preferred_pickup_notes ?? '',
       total_estimate: payload.total_estimate,
     }
 
@@ -534,7 +548,7 @@ export function usePlatform() {
       .eq('id', payload.provider_id)
       .single()
 
-    const providerName = (providerData as { name: string } | null)?.name ?? 'Provider'
+    const providerName = (providerData as { name: string } | null)?.name ?? p.name
 
 
     const activity = {

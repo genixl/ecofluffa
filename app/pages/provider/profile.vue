@@ -40,8 +40,9 @@
       <div v-if="saveError" class="text-red-500 text-sm mt-2">{{ saveError }}</div>
       <div v-if="saved" class="text-brand-blue text-sm mt-2">
         Business profile saved.
-        <span v-if="provider?.is_listed"> Customers will see your updates.</span>
-        <NuxtLink v-else to="/provider/setup" class="font-semibold underline ml-1">Publish your listing →</NuxtLink>
+        <span v-if="isApproved"> Customers will see your updates.</span>
+        <span v-else-if="isPendingApproval"> Pending admin approval before customers can see you.</span>
+        <NuxtLink v-else-if="needsOnboarding" to="/provider/setup" class="font-semibold underline ml-1">Complete setup →</NuxtLink>
       </div>
 
       <div class="mt-6">
@@ -58,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-const { fetchMyProvider, provider, updateProvider } = useProviderProfile()
+const { fetchMyProvider, provider, updateProvider, isApproved, isPendingApproval, needsOnboarding } = useProviderProfile()
 const { success } = useToast()
 
 const businessName = ref('')

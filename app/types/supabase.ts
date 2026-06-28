@@ -3,11 +3,15 @@ export type OrderStatus = 'pending' | 'washing' | 'ready' | 'delivered' | 'cance
 export type UserRole = 'customer' | 'provider' | 'admin'
 export type ContactStatus = 'new' | 'responded' | 'resolved'
 export type ActivityType = 'status' | 'message' | 'booking' | 'admin'
+export type ApprovalStatus = 'pending' | 'approved' | 'disabled'
+export type ServiceApprovalStatus = 'pending' | 'approved' | 'rejected'
 
 export interface Profile {
   id: string
   full_name: string
   phone: string
+  alternate_phone?: string
+  preferred_pickup_notes?: string
   role: UserRole
   provider_id: string | null
   created_at: string
@@ -22,6 +26,7 @@ export interface Provider {
   review_count: number
   phone: string
   is_listed: boolean
+  approval_status?: ApprovalStatus
   created_at: string
 }
 
@@ -35,8 +40,18 @@ export interface Service {
   description: string
   turnaround: string
   popular: boolean
-  provider_id: string | null // Optional provider ID for custom services
+  provider_id: string | null // set for provider-owned custom services only
+  approval_status?: ServiceApprovalStatus
   created_at: string
+}
+
+export function isCatalogService(service: Service) {
+  return service.provider_id == null
+}
+
+export function isServiceVisibleToCustomers(service: Service) {
+  if (isCatalogService(service)) return true
+  return (service.approval_status ?? 'approved') === 'approved'
 }
 
 export interface ProviderService {
@@ -60,6 +75,8 @@ export interface Order {
   pickup_date: string
   pickup_time: string
   pickup_address: string
+  customer_name?: string
+  customer_phone?: string
   notes: string
   total_estimate: string
   created_at: string

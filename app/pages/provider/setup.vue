@@ -53,7 +53,7 @@
         </div>
 
         <div
-          v-if="!editingId && services.length === 0"
+          v-if="!editingId && catalogServices.length === 0"
           class="text-sm text-muted py-4 px-3 mb-4 rounded-lg border border-theme"
         >
           No services are available in the catalog yet. Ask your admin to seed the
@@ -111,7 +111,7 @@
       </section>
 
       <section class="bg-surface border border-theme rounded-xl p-6 shadow-theme-md">
-        <SectionHeader title="Publish to customer portal" subtitle="Make your business visible when you are ready" />
+        <SectionHeader title="Submit for admin approval" subtitle="An admin must approve your account before customers can see you or place orders" />
         <ul class="space-y-2 mb-6 text-sm">
           <li class="flex items-center gap-2" :style="checkStyle(hasContact)">
             <Icon :name="hasContact ? 'mdi:check-circle' : 'mdi:circle-outline'" size="20" />
@@ -127,16 +127,23 @@
           </li>
         </ul>
 
+        <div v-if="provider?.approval_status === 'pending' && canPublish" class="rounded-lg p-4 mb-4 text-sm" style="background-color: var(--brand-blue-light); color: var(--brand-blue);">
+          Your profile has been submitted. An admin will review and approve your account shortly.
+        </div>
+
         <div v-if="publishError" class="text-red-500 text-sm mb-3">{{ publishError }}</div>
 
         <AppButton
-          label="Publish: show my business to customers"
+          label="Submit profile for admin approval"
           variant="primary"
           type="button"
-          :disabled="!canPublish || publishing"
+          :disabled="!canPublish || publishing || provider?.approval_status === 'pending'"
           :loading="publishing"
           @click="publish"
         />
+        <p class="text-xs text-muted mt-3">
+          Once approved, your business will appear to customers and you can receive orders. If disabled later, contact support to request restoration.
+        </p>
       </section>
     </template>
   </div>
@@ -150,16 +157,16 @@ const { profile, ensureProviderLink, fetchProfile } = useAuth()
 const {
   provider,
   myServices,
+  catalogServices,
   fetchMyProvider,
   updatePersonalProfile,
   updateProvider,
   addService,
   updateService,
   removeService,
-  publishToCustomers,
+  submitForApproval,
   canPublish,
 } = useProviderProfile()
-const { services, fetchAll } = useServices()
 
 const pageLoading = ref(true)
 const publishing = ref(false)
@@ -205,12 +212,13 @@ const businessComplete = computed(() =>
     rating: provider.value?.rating ?? 0,
     review_count: provider.value?.review_count ?? 0,
     is_listed: false,
+    approval_status: 'pending',
     created_at: '',
   })
 )
 
 const availableToAdd = computed(() =>
-  services.value.filter((s) => !myServices.value.some((ps) => ps.service_id === s.id))
+  catalogServices.value.filter((s) => !myServices.value.some((ps) => ps.service_id === s.id))
 )
 
 const checkStyle = (done: boolean) =>
@@ -232,7 +240,6 @@ const ensureProviderExists = async () => {
 }
 
 onMounted(async () => {
-  await fetchAll(true)
   await ensureProviderExists()
   await fetchMyProvider()
   pageLoading.value = false
@@ -319,13 +326,13 @@ const publish = async () => {
   await savePersonal()
   await saveBusiness()
   publishing.value = true
-  const result = await publishToCustomers()
+  const result = await submitForApproval()
   publishing.value = false
   if (result.error) {
     publishError.value = result.error
     return
   }
-  await navigateTo('/provider', { replace: true })
+  await fetchMyProvider()
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })

@@ -13,6 +13,35 @@
     </div>
 
     <template v-else>
+      <div
+        v-if="isDisabled"
+        class="rounded-xl border-2 p-4 mb-6 flex items-start gap-3"
+        style="border-color: #ef4444; background-color: #fef2f2;"
+      >
+        <Icon name="mdi:account-off" size="24" style="color: #ef4444;" />
+        <div>
+          <div class="font-bold" style="color: #991b1b;">Account disabled</div>
+          <p class="text-sm mt-1" style="color: #b91c1c;">
+            Your provider account has been disabled. You cannot receive new orders. Please contact support to request restoration.
+          </p>
+          <NuxtLink to="/contact" class="text-sm font-semibold underline mt-2 inline-block" style="color: #991b1b;">Contact support →</NuxtLink>
+        </div>
+      </div>
+
+      <div
+        v-else-if="isPendingApproval"
+        class="rounded-xl border-2 p-4 mb-6 flex items-start gap-3"
+        style="border-color: var(--brand-orange); background-color: rgba(255, 107, 53, 0.08);"
+      >
+        <Icon name="mdi:clock-outline" size="24" style="color: var(--brand-orange);" />
+        <div>
+          <div class="font-bold" style="color: var(--brand-blue);">Awaiting admin approval</div>
+          <p class="text-sm mt-1" style="color: var(--text-muted);">
+            Your profile is complete but not yet approved. Customers cannot see you or place orders until an admin approves your account.
+          </p>
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <CustomerStatCard label="Incoming" :value="stats.incoming" hint="Awaiting acceptance" />
         <CustomerStatCard label="Washing" :value="stats.washing" hint="In progress" />
@@ -128,10 +157,11 @@
 
 <script setup lang="ts">
 const { stats, incomingOrders, recentActivities, orders, loadAll } = useProviderOrders()
+const { isPendingApproval, isDisabled, fetchMyProvider } = useProviderProfile()
 const loading = ref(true)
 
 onMounted(async () => {
-  await loadAll()
+  await Promise.all([loadAll(), fetchMyProvider()])
   loading.value = false
 })
 

@@ -10,7 +10,7 @@
         <Icon name="mdi:arrow-left" size="18" /> {{ backLabel }}
       </NuxtLink>
 
-      <SectionHeader title="Book Your Pickup" subtitle="Fill in your details and confirm the booking" />
+      <SectionHeader title="Book Your Pickup" subtitle="Your profile details are pre-filled below — confirm and book" />
 
       <div v-if="loadingData" class="text-center py-12 text-muted">Loading…</div>
 
@@ -23,10 +23,6 @@
           <div class="flex-1 min-w-0">
             <div class="font-bold" style="color: var(--brand-blue);">{{ selectedProvider.name }}</div>
             <div class="text-sm" style="color: var(--text-muted);">{{ selectedProvider.location }} · {{ selectedProvider.pickup_fee }}</div>
-          </div>
-          <div v-if="selectedOffer" class="text-right shrink-0">
-            <div class="font-bold" style="color: var(--brand-orange);">KSh {{ selectedOffer.price }}</div>
-            <div class="text-xs" style="color: var(--text-muted);">{{ selectedOffer.unit }}</div>
           </div>
         </div>
 
@@ -44,43 +40,93 @@
             </select>
           </div>
 
+          <!-- Selected services -->
           <div>
-            <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Select Services</label>
-            <div v-if="availableServices.length === 0" class="text-muted text-sm py-4">
-              No services available for this provider.
+            <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Your Services</label>
+
+            <div v-if="bookedServices.length === 0" class="text-muted text-sm py-4 rounded-xl px-4"
+              style="background-color: var(--bg-subtle); border: 1px dashed var(--border-color);">
+              No service selected yet. Choose one below or use "Add Another Service".
             </div>
-            <div v-else class="space-y-3">
+
+            <div v-else class="space-y-3 mb-4">
               <div
-                v-for="s in availableServices"
-                :key="s.service_id"
-                class="flex items-center gap-3 p-3 rounded-lg border transition-all"
-                :style="selectedServices.has(s.service_id)
-                  ? 'background-color: var(--brand-blue-light); border-color: var(--brand-blue);'
-                  : 'background-color: var(--bg-subtle); border-color: var(--border-color);'"
+                v-for="entry in bookedServices"
+                :key="entry.service_id"
+                class="flex items-center gap-3 p-4 rounded-xl border"
+                style="background-color: var(--brand-blue-light); border-color: var(--brand-blue);"
               >
-                <input
-                  type="checkbox"
-                  :id="`service-${s.service_id}`"
-                  :checked="selectedServices.has(s.service_id)"
-                  @change="toggleService(s.service_id)"
-                  class="w-5 h-5 rounded cursor-pointer"
-                />
-                <label :for="`service-${s.service_id}`" class="flex-1 cursor-pointer">
-                  <div class="font-medium" style="color: var(--text-primary);">{{ s.service?.title }}</div>
-                  <div class="text-xs" style="color: var(--text-muted);">KSh {{ s.price }} {{ s.unit }}</div>
-                </label>
-                <div v-if="selectedServices.has(s.service_id)" class="flex items-center gap-2">
-                  <label class="text-xs" style="color: var(--text-muted);">Qty:</label>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold" style="color: var(--brand-blue);">{{ entry.service?.service?.title }}</div>
+                  <div class="text-xs mt-0.5" style="color: var(--text-muted);">
+                    KSh {{ entry.service?.price }} {{ entry.service?.unit }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <label class="text-xs font-medium" style="color: var(--text-muted);">Qty</label>
                   <input
                     type="number"
                     min="1"
-                    :value="getServiceQuantity(s.service_id)"
-                    @input="setServiceQuantity(s.service_id, $event)"
-                    class="w-16 px-2 py-1 rounded text-sm border text-center"
+                    :value="entry.quantity"
+                    @input="setServiceQuantity(entry.service_id, $event)"
+                    class="w-16 px-2 py-1.5 rounded-lg text-sm border text-center"
                     style="background-color: var(--bg-surface); border-color: var(--border-color); color: var(--text-primary);"
                   />
                 </div>
+                <button
+                  v-if="bookedServices.length > 1"
+                  type="button"
+                  class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:opacity-80"
+                  style="background-color: var(--bg-surface); color: #ef4444; border: 1px solid var(--border-color);"
+                  title="Remove service"
+                  @click="removeService(entry.service_id)"
+                >
+                  <Icon name="mdi:close" size="16" />
+                </button>
               </div>
+            </div>
+
+            <button
+              v-if="!showAddService"
+              type="button"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+              style="background-color: var(--bg-subtle); color: var(--brand-blue); border: 1px solid var(--border-color);"
+              @click="showAddService = true"
+            >
+              <Icon name="mdi:plus-circle-outline" size="18" />
+              Add Another Service
+            </button>
+
+            <div v-else class="rounded-xl p-4 mt-2" style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
+              <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);">Choose a service to add</label>
+              <div class="flex gap-2">
+                <select
+                  v-model="serviceToAdd"
+                  class="flex-1 px-3 py-2.5 rounded-lg text-sm border outline-none"
+                  style="background-color: var(--bg-surface); border-color: var(--border-color); color: var(--text-primary);"
+                >
+                  <option value="">Select a service…</option>
+                  <option
+                    v-for="s in servicesNotYetAdded"
+                    :key="s.service_id"
+                    :value="s.service_id"
+                  >
+                    {{ s.service?.title }} — KSh {{ s.price }} {{ s.unit }}
+                  </option>
+                </select>
+                <AppButton label="Add" variant="primary" type="button" :disabled="!serviceToAdd" @click="addAnotherService" />
+                <AppButton label="Cancel" variant="outline" type="button" @click="showAddService = false" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact from profile -->
+          <div class="rounded-xl p-4" style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
+            <div class="text-xs font-bold uppercase tracking-wide mb-3" style="color: var(--brand-blue);">Your contact details</div>
+            <p class="text-xs mb-3" style="color: var(--text-muted);">Taken from your profile — visible to the provider with this order.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField label="Full Name" type="text" placeholder="Your full name" v-model="customerName" />
+              <InputField label="Phone Number" type="tel" placeholder="+254 7XX XXX XXX" v-model="customerPhone" />
             </div>
           </div>
 
@@ -131,26 +177,27 @@
                 Verify
               </a>
             </div>
-            <p class="text-xs mt-1.5" style="color: var(--text-muted);">
-              Type your address then click <strong>Verify</strong> to confirm it on Google Maps.
-            </p>
           </div>
-
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputField label="Pickup Date" type="date" v-model="pickupDate" />
             <InputField label="Pickup Time" type="time" v-model="pickupTime" />
           </div>
 
-          <InputField label="Phone Number" type="tel" placeholder="+254 7XX XXX XXX" v-model="customerPhone" />
+          <InputField
+            label="Pickup notes (optional)"
+            type="text"
+            placeholder="Gate code, landmarks, special instructions…"
+            v-model="pickupNotes"
+          />
 
           <div v-if="formError" class="text-red-500 text-sm font-medium">{{ formError }}</div>
 
-          <div v-if="selectedServices.size > 0" class="rounded-xl p-4 flex items-center justify-between"
+          <div v-if="bookedServices.length > 0" class="rounded-xl p-4 flex items-center justify-between"
             style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
             <div>
               <div class="text-sm font-semibold" style="color: var(--text-primary);">Estimated Total</div>
-              <div class="text-xs" style="color: var(--text-muted);">{{ selectedServices.size }} service{{ selectedServices.size > 1 ? 's' : '' }} selected</div>
+              <div class="text-xs" style="color: var(--text-muted);">{{ bookedServices.length }} service{{ bookedServices.length > 1 ? 's' : '' }}</div>
             </div>
             <div class="font-bold text-xl" style="color: var(--brand-orange);">KSh {{ totalCost }}</div>
           </div>
@@ -166,6 +213,8 @@
 </template>
 
 <script setup lang="ts">
+import type { ProviderService } from '~/types/supabase'
+
 const route = useRoute()
 const router = useRouter()
 const { createOrder } = usePlatform()
@@ -177,6 +226,8 @@ const { success } = useToast()
 const loadingData = ref(true)
 const submitting = ref(false)
 const formError = ref('')
+const showAddService = ref(false)
+const serviceToAdd = ref('')
 
 const queryProviderId = computed(() => String(route.query.provider ?? ''))
 const queryServiceId = computed(() => String(route.query.service ?? ''))
@@ -189,77 +240,92 @@ const selectedProvider = computed(() => providers.value.find((p) => p.id === res
 
 const availableServices = computed(() => {
   if (!resolvedProviderId.value) return []
-  return providerServices.value
-    .filter((ps) => ps.provider_id === resolvedProviderId.value)
+  return providerServices.value.filter((ps) => ps.provider_id === resolvedProviderId.value)
 })
 
-const serviceId = ref(queryServiceId.value)
-const selectedServices = ref<Set<string>>(new Set())
-const serviceQuantities = ref<Record<string, number>>({})
+interface BookedEntry {
+  service_id: string
+  quantity: number
+  service: ProviderService | undefined
+}
 
-watch(availableServices, (list) => {
-  if (list.length && !list.some((s) => s.service_id === serviceId.value)) {
-    serviceId.value = list[0]?.service_id ?? ''
-  }
-  // Auto-select the service from query param
-  if (queryServiceId.value && list.some((s) => s.service_id === queryServiceId.value)) {
-    selectedServices.value.add(queryServiceId.value)
-    serviceQuantities.value[queryServiceId.value] = 1
-  }
-})
+const bookedServices = ref<BookedEntry[]>([])
 
-const selectedOffer = computed(() =>
-  availableServices.value.find((s) => s.service_id === serviceId.value) ?? null
-)
+const initFromQuery = () => {
+  const list = availableServices.value
+  if (!list.length) return
 
-const toggleService = (serviceId: string) => {
-  if (selectedServices.value.has(serviceId)) {
-    selectedServices.value.delete(serviceId)
-    delete serviceQuantities.value[serviceId]
-  } else {
-    selectedServices.value.add(serviceId)
-    serviceQuantities.value[serviceId] = 1
+  const initialId = queryServiceId.value && list.some((s) => s.service_id === queryServiceId.value)
+    ? queryServiceId.value
+    : list[0]?.service_id
+
+  if (initialId && !bookedServices.value.some((b) => b.service_id === initialId)) {
+    bookedServices.value = [{
+      service_id: initialId,
+      quantity: 1,
+      service: list.find((s) => s.service_id === initialId),
+    }]
   }
 }
 
-const getServiceQuantity = (serviceId: string) => {
-  return serviceQuantities.value[serviceId] || 1
+watch(availableServices, () => {
+  if (!bookedServices.value.length) initFromQuery()
+})
+
+const servicesNotYetAdded = computed(() =>
+  availableServices.value.filter(
+    (s) => !bookedServices.value.some((b) => b.service_id === s.service_id)
+  )
+)
+
+const addAnotherService = () => {
+  if (!serviceToAdd.value) return
+  const svc = availableServices.value.find((s) => s.service_id === serviceToAdd.value)
+  if (!svc) return
+  bookedServices.value.push({ service_id: serviceToAdd.value, quantity: 1, service: svc })
+  serviceToAdd.value = ''
+  showAddService.value = false
+}
+
+const removeService = (serviceId: string) => {
+  bookedServices.value = bookedServices.value.filter((b) => b.service_id !== serviceId)
 }
 
 const setServiceQuantity = (serviceId: string, event: Event) => {
-  const target = event.target as HTMLInputElement
-  const value = parseInt(target.value) || 1
-  serviceQuantities.value[serviceId] = Math.max(1, value)
+  const value = parseInt((event.target as HTMLInputElement).value, 10) || 1
+  const entry = bookedServices.value.find((b) => b.service_id === serviceId)
+  if (entry) entry.quantity = Math.max(1, value)
 }
 
 const totalCost = computed(() => {
   let total = 0
-  selectedServices.value.forEach((serviceId) => {
-    const service = availableServices.value.find((s) => s.service_id === serviceId)
-    if (service) {
-      const price = parseInt(service.price.replace(/,/g, ''), 10) || 0
-      const quantity = serviceQuantities.value[serviceId] || 1
-      total += price * quantity
-    }
-  })
+  for (const entry of bookedServices.value) {
+    const price = parseInt(entry.service?.price.replace(/,/g, '') ?? '0', 10) || 0
+    total += price * entry.quantity
+  }
   return total.toLocaleString()
 })
 
-// Form fields
 const pickupAddress = ref('')
 const pickupDate = ref('')
 const pickupTime = ref('')
-const customerPhone = ref(profile.value?.phone ?? '')
+const pickupNotes = ref('')
+const customerName = ref('')
+const customerPhone = ref('')
+
+watch(profile, (p) => {
+  if (!p) return
+  if (!customerName.value) customerName.value = p.full_name
+  if (!customerPhone.value) customerPhone.value = p.phone || p.alternate_phone
+  if (!pickupNotes.value) pickupNotes.value = p.preferred_pickup_notes
+}, { immediate: true })
 
 const backLink = computed(() => queryProviderId.value ? `/customer/providers/${queryProviderId.value}` : '/customer/browse')
 const backLabel = computed(() => selectedProvider.value ? `Back to ${selectedProvider.value.name}` : 'Back to Browse')
 
 onMounted(async () => {
   await Promise.all([fetchAll(), fetchAddresses()])
-  if (!serviceId.value && availableServices.value.length) {
-    serviceId.value = availableServices.value[0]?.service_id ?? ''
-  }
-  // Pre-fill default saved address if available
+  initFromQuery()
   if (!pickupAddress.value && defaultAddress.value) {
     pickupAddress.value = defaultAddress.value.address
   }
@@ -269,21 +335,22 @@ onMounted(async () => {
 const submitOrder = async () => {
   formError.value = ''
   if (!resolvedProviderId.value) { formError.value = 'Please select a provider.'; return }
-  if (selectedServices.value.size === 0) { formError.value = 'Please select at least one service.'; return }
+  if (bookedServices.value.length === 0) { formError.value = 'Please add at least one service.'; return }
+  if (!customerName.value.trim()) { formError.value = 'Please enter your name.'; return }
+  if (!customerPhone.value.trim()) { formError.value = 'Please enter your phone number.'; return }
   if (!pickupAddress.value) { formError.value = 'Please enter your pickup address.'; return }
   if (!pickupDate.value) { formError.value = 'Please choose a pickup date.'; return }
   if (!pickupTime.value) { formError.value = 'Please choose a pickup time.'; return }
 
   submitting.value = true
 
-  const servicesArray = Array.from(selectedServices.value).map((serviceId) => {
-    const service = availableServices.value.find((s) => s.service_id === serviceId)
-    const quantity = serviceQuantities.value[serviceId] || 1
-    const price = service ? parseInt(service.price.replace(/,/g, ''), 10) * quantity : 0
+  const servicesArray = bookedServices.value.map((entry) => {
+    const quantity = entry.quantity
+    const price = parseInt(entry.service?.price.replace(/,/g, '') ?? '0', 10) * quantity
     return {
-      title: service?.service?.title ?? serviceId,
+      title: entry.service?.service?.title ?? entry.service_id,
       price: `KSh ${price}`,
-      description: service?.service?.description ?? '',
+      description: entry.service?.service?.description ?? '',
     }
   })
 
@@ -292,12 +359,15 @@ const submitOrder = async () => {
     pickup_date: pickupDate.value,
     pickup_time: pickupTime.value,
     pickup_address: pickupAddress.value,
+    customer_name: customerName.value.trim(),
+    customer_phone: customerPhone.value.trim(),
+    notes: pickupNotes.value.trim(),
     total_estimate: `KSh ${totalCost.value}`,
     services: servicesArray,
   })
 
   submitting.value = false
-  if (!id) { formError.value = 'Failed to place order. Please try again.'; return }
+  if (!id) { formError.value = 'Failed to place order. The provider may not be approved yet — please try again or choose another provider.'; return }
   success('Booking confirmed! Your provider will be notified.')
   router.push(`/customer/order/${id}`)
 }
