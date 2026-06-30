@@ -44,6 +44,13 @@
           <div class="text-xs font-semibold text-muted mb-1">Manage Order</div>
           <div class="flex flex-col gap-2">
             <AppButton
+              v-if="order.status === 'delivered' && !order.delivery_confirmed"
+              label="Confirm Delivery"
+              variant="primary"
+              type="button"
+              @click="showConfirmDeliveryModal = true"
+            />
+            <AppButton
               label="Cancel Order"
               variant="outline"
               type="button"
@@ -101,9 +108,9 @@
         </div>
       </div>
 
-      <!-- Rating section: only when delivered and not yet rated -->
+      <!-- Rating section: only when delivered and confirmed, not yet rated -->
       <div
-        v-if="order.status === 'delivered' && !existingRating"
+        v-if="order.status === 'delivered' && order.delivery_confirmed && !existingRating"
         class="mt-8 rounded-2xl p-6 flex items-center justify-between gap-4"
         style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b;"
       >
@@ -254,7 +261,70 @@
       :order-id="order.id"
       :provider-id="order.provider_id"
       :provider-name="order.provider?.name ?? 'Provider'"
-      @submitted="loadAll(true)"
+      @submitted="onRatingSubmitted"
+    />
+
+    <!-- ── Delivery Confirmation Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showConfirmDeliveryModal"
+          class="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style="background: rgba(0,0,0,0.55);"
+          @click.self="showConfirmDeliveryModal = false"
+        >
+          <div
+            class="rounded-2xl p-8 max-w-md w-full shadow-2xl"
+            style="background-color: var(--bg-surface);"
+          >
+            <div class="flex items-center gap-4 mb-6">
+              <div
+                class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                style="background-color: #d1fae5;"
+              >
+                <Icon name="mdi:check-circle" size="26" style="color: #10b981;" />
+              </div>
+              <div>
+                <h2 class="text-xl font-bold" style="color: var(--text-primary);">Confirm Delivery</h2>
+                <p class="text-sm mt-0.5" style="color: var(--text-muted);">Order {{ order?.id }}</p>
+              </div>
+            </div>
+
+            <p class="text-sm mb-8 leading-relaxed" style="color: var(--text-muted);">
+              Have you received your laundry from {{ order?.provider?.name }}? Please confirm only after you have received your items.
+            </p>
+
+            <div class="flex gap-3">
+              <button
+                :disabled="confirmingDelivery"
+                @click="confirmDeliveryAction"
+                class="flex-1 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40"
+                style="background-color: #10b981; color: #fff;"
+              >
+                {{ confirmingDelivery ? 'Confirming…' : 'Yes, I Received It' }}
+              </button>
+              <button
+                @click="showConfirmDeliveryModal = false"
+                class="flex-1 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-80"
+                style="background-color: var(--bg-subtle); color: var(--text-primary);"
+              >
+                Not Yet
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ── Receipt Modal ── -->
+    <ReceiptModal
+      v-if="order"
+      v-model="showReceiptModal"
+      :order-id="order.id"
+      :provider-name="order.provider?.name ?? 'Provider'"
+      :services="order.order_services || []"
+      :total="order.total_estimate"
+      :date="order.created_at"
     />
   </div>
 </template>
@@ -264,15 +334,18 @@ import type { OrderStatus } from '~/types/supabase'
 
 const route = useRoute()
 const { userName } = useAuth()
-const { getOrderById, getFlowStepIndex, cancelOrder, rescheduleOrder, recentActivities, loadAll, getRatingForOrder } = useCustomerOrders()
+const { getOrderById, getFlowStepIndex, cancelOrder, rescheduleOrder, confirmDelivery, recentActivities, loadAll, getRatingForOrder } = useCustomerOrders()
 const { success, error } = useToast()
 
 const loading = ref(true)
 const showCancelModal = ref(false)
 const showRescheduleModal = ref(false)
 const showRatingModal = ref(false)
+const showConfirmDeliveryModal = ref(false)
+const showReceiptModal = ref(false)
 const cancelling = ref(false)
 const rescheduling = ref(false)
+const confirmingDelivery = ref(false)
 const newPickupTime = ref('')
 
 const routeId = computed(() => String(route.params.id ?? ''))
@@ -345,6 +418,33 @@ const confirmReschedule = async () => {
   } finally {
     rescheduling.value = false
   }
+}
+
+const confirmDeliveryAction = async () => {
+  if (!order.value) return
+  confirmingDelivery.value = true
+  try {
+    const ok = await confirmDelivery(order.value.id, userName.value)
+    if (ok) {
+      showConfirmDeliveryModal.value = false
+      // Show rating modal after successful delivery confirmation
+      setTimeout(() => {
+        showRatingModal.value = true
+      }, 500)
+    } else {
+      error('Failed to confirm delivery. Please try again.')
+    }
+  } catch {
+    error('Failed to confirm delivery. Please try again.')
+  } finally {
+    confirmingDelivery.value = false
+  }
+}
+
+const onRatingSubmitted = () => {
+  loadAll(true)
+  // Show receipt after rating
+  showReceiptModal.value = true
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })

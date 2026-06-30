@@ -24,8 +24,8 @@
               <div class="font-bold text-sm" style="color: var(--brand-blue);">{{ roleLabel }}</div>
               <div class="text-xs" style="color: var(--text-muted);">Dashboard</div>
             </div>
-            <!-- Bell notification button -->
-            <div class="relative" ref="bellContainerDesktop">
+            <!-- Bell notification button (desktop only) -->
+            <div class="relative hidden lg:block" ref="bellContainerDesktop">
               <button
                 @click="bellOpen = !bellOpen"
                 class="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
@@ -104,12 +104,12 @@
 
       <div class="flex-1 flex flex-col min-w-0 lg:ml-64">
         <div
-          class="lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-30"
+          class="lg:hidden flex items-center gap-2 px-3 py-3 sticky top-0 z-30"
           style="background-color: var(--bg-surface); border-bottom: 1px solid var(--border-color);"
         >
           <button
             @click="sidebarOpen = true"
-            class="w-9 h-9 rounded-lg flex flex-col items-center justify-center gap-1.5"
+            class="w-9 h-9 rounded-lg flex flex-col items-center justify-center gap-1.5 shrink-0"
             style="background-color: var(--bg-subtle); color: var(--text-primary);"
             aria-label="Open sidebar"
           >
@@ -117,11 +117,10 @@
             <span class="block w-4 h-0.5" style="background-color: currentColor;"></span>
             <span class="block w-4 h-0.5" style="background-color: currentColor;"></span>
           </button>
-          <span class="font-semibold text-sm" style="color: var(--text-primary);">{{ roleLabel }}</span>
-          <div class="ml-auto flex items-center gap-3">
-            <span class="text-xs px-2 py-1 rounded-full font-medium" style="background-color: var(--brand-blue-light); color: var(--brand-blue);">{{ roleLabel }}</span>
-            <!-- Mobile bell button -->
-            <div class="relative" ref="bellContainerMobile">
+          <span class="font-semibold text-sm truncate" style="color: var(--text-primary);">{{ roleLabel }}</span>
+          <div class="ml-auto flex items-center gap-2 shrink-0">
+            <!-- Mobile bell button (mobile only) -->
+            <div class="relative lg:hidden" ref="bellContainerMobile">
               <button
                 @click="bellOpen = !bellOpen"
                 class="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
@@ -265,7 +264,7 @@ const navItems = computed<NavItem[]>(() => {
           ? [{ to: '/provider/setup', label: 'Complete setup', icon: 'mdi:clipboard-check' }]
           : [
               { to: '/provider', label: 'Dashboard', icon: 'mdi:home' },
-              { to: '/provider/orders', label: 'Incoming Orders', icon: 'mdi:inbox' },
+              { to: '/provider/orders', label: 'Orders', icon: 'mdi:inbox' },
               { to: '/provider/services', label: 'My Services', icon: 'mdi:washing-machine' },
               { to: '/provider/profile', label: 'Business Profile', icon: 'mdi:store' },
             ]

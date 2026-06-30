@@ -1,4 +1,4 @@
-import type { Provider, ProviderService, Service } from '~/types/supabase'
+import type { Provider, ProviderService, Service, Rating } from '~/types/supabase'
 import { PROVIDER_PLACEHOLDER_LOCATION, isCatalogService } from '~/types/supabase'
 
 export function isProviderBusinessComplete(provider: Provider | null) {
@@ -19,6 +19,7 @@ export function useProviderProfile() {
   const provider = useState<Provider | null>('my-provider', () => null)
   const myServices = useState<ProviderService[]>('my-provider-services', () => [])
   const catalogServices = useState<Service[]>('my-catalog-services', () => [])
+  const ratings = useState<Rating[]>('my-provider-ratings', () => [])
   const loading = useState<boolean>('provider-profile-loading', () => false)
 
   const fetchMyProvider = async () => {
@@ -30,7 +31,7 @@ export function useProviderProfile() {
 
     const providerId = profile.value.provider_id
 
-    const [prvRes, svcRes, catalogRes] = await Promise.all([
+    const [prvRes, svcRes, catalogRes, ratingsRes] = await Promise.all([
       supabase
         .from('providers')
         .select('*')
@@ -45,6 +46,11 @@ export function useProviderProfile() {
         .select('*')
         .is('provider_id', null)
         .order('title'),
+      supabase
+        .from('ratings')
+        .select('*, orders!inner(customer_id)')
+        .eq('provider_id', providerId)
+        .order('created_at', { ascending: false }),
     ])
 
     if (prvRes.error) console.error('Provider fetch error:', prvRes.error)
@@ -60,6 +66,14 @@ export function useProviderProfile() {
     } else {
       console.log('Catalog services empty or error:', catalogRes.error?.message || 'No data')
     }
+
+    if (ratingsRes.error) console.error('Ratings fetch error:', ratingsRes.error)
+    if (!ratingsRes.error && ratingsRes.data) {
+      ratings.value = ratingsRes.data as Rating[]
+    } else {
+      ratings.value = []
+    }
+
     loading.value = false
   }
 
@@ -205,6 +219,7 @@ export function useProviderProfile() {
     provider,
     myServices,
     catalogServices,
+    ratings,
     loading,
     needsOnboarding,
     isPendingApproval,

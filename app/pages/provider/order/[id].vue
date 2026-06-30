@@ -15,7 +15,17 @@
           <div class="text-primary mt-2">Customer Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}</div>
           <div class="text-primary text-sm mt-1">Customer: {{ customerDisplayName }}</div>
         </div>
-        <OrderStatusBadge :status="order.status" />
+        <div class="flex items-center gap-3">
+          <OrderStatusBadge :status="order.status" />
+          <div
+            v-if="order.status === 'delivered' && order.delivery_confirmed"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5"
+            style="background-color: #d1fae5; color: #10b981;"
+          >
+            <Icon name="mdi:check-circle" size="14" />
+            Delivery Confirmed
+          </div>
+        </div>
       </div>
 
       <div class="mt-8">

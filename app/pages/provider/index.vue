@@ -49,20 +49,23 @@
         <CustomerStatCard label="Delivered" :value="stats.delivered" hint="Completed" />
         <div
           class="rounded-xl p-5 flex flex-col gap-1"
-          :style="todayOrders.length
-            ? 'background-color: #ffedd5; border: 2px solid #ea580c;'
+          :style="provider.value?.rating && provider.value.rating > 0
+            ? 'background-color: #fef3c7; border: 2px solid #f59e0b;'
             : 'background-color: var(--bg-surface); border: 1px solid var(--border-color);'"
         >
           <div class="text-xs font-semibold uppercase tracking-wide"
-            :style="todayOrders.length ? 'color: #ea580c;' : 'color: var(--text-muted);'">
-            Today's Pickups
+            :style="provider.value?.rating && provider.value.rating > 0 ? 'color: #92400e;' : 'color: var(--text-muted);'">
+            Rating
           </div>
-          <div class="text-3xl font-black"
-            :style="todayOrders.length ? 'color: #ea580c;' : 'color: var(--text-primary);'">
-            {{ todayOrders.length }}
+          <div class="flex items-center gap-1">
+            <div class="text-3xl font-black"
+              :style="provider.value?.rating && provider.value.rating > 0 ? 'color: #92400e;' : 'color: var(--text-primary);'">
+              {{ (provider.value?.rating ?? 0).toFixed(1) }}
+            </div>
+            <Icon v-if="provider.value?.rating && provider.value.rating > 0" name="mdi:star" size="20" style="color: #f59e0b;" />
           </div>
-          <div class="text-xs" :style="todayOrders.length ? 'color: #c2410c;' : 'color: var(--text-muted);'">
-            {{ revenueEstimate }}
+          <div class="text-xs" :style="provider.value?.rating && provider.value.rating > 0 ? 'color: #b45309;' : 'color: var(--text-muted);'">
+            {{ provider.value?.review_count || 0 }} review{{ (provider.value?.review_count || 0) !== 1 ? 's' : '' }}
           </div>
         </div>
       </div>
@@ -157,7 +160,7 @@
 
 <script setup lang="ts">
 const { stats, incomingOrders, recentActivities, orders, loadAll } = useProviderOrders()
-const { isPendingApproval, isDisabled, fetchMyProvider } = useProviderProfile()
+const { isPendingApproval, isDisabled, fetchMyProvider, provider } = useProviderProfile()
 const loading = ref(true)
 
 onMounted(async () => {

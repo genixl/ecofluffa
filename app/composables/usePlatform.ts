@@ -323,21 +323,66 @@ export function usePlatform() {
       .single()
     if (error) return false
     if (data) ratings.value.push(data as Rating)
-    // update the cached provider rating so the UI reflects the new score
-    await supabase
-      .from('providers')
-      .select('id, rating, review_count')
-      .eq('id', providerId)
-      .single()
-      .then(({ data: p }) => {
-        if (p) {
-          const po = orders.value.find((o) => o.provider_id === providerId)
-          if (po?.provider) {
-            po.provider.rating = (p as { rating: number }).rating
-            po.provider.review_count = (p as { review_count: number }).review_count
-          }
-        }
+    
+    // Calculate and update provider's average rating
+    const { data: allRatings } = await supabase
+      .from('ratings')
+      .select('score')
+      .eq('provider_id', providerId)
+    
+    if (allRatings && allRatings.length > 0) {
+      const totalScore = allRatings.reduce((sum, r) => sum + (r as { score: number }).score, 0)
+      const avgRating = totalScore / allRatings.length
+      
+      await supabase
+        .from('providers')
+        .update({
+          rating: avgRating,
+          review_count: allRatings.length
+        })
+        .eq('id', providerId)
+      
+      // Update local cache
+      const po = orders.value.find((o) => o.provider_id === providerId)
+      if (po?.provider) {
+        po.provider.rating = avgRating
+        po.provider.review_count = allRatings.length
+      }
+    }
+
+    // Send notifications for rating submission
+    const { addNotification } = useInAppNotifications()
+    const { show } = useToast()
+    const { notify } = useWebNotifications()
+    const currentRole = profile.value?.role ?? null
+    const currentProviderId = profile.value?.provider_id ?? null
+
+    // Customer notification
+    show('Rating submitted successfully!', 'success', 4000)
+    notify('EcoFluffa – Rating Submitted', { body: `Thank you for rating order ${orderId}.`, tag: `rating-submitted-${orderId}` })
+    addNotification({
+      type: 'order_update',
+      title: '⭐ Rating Submitted',
+      body: `Thank you for rating order ${orderId}. Your feedback helps us improve!`,
+      orderId,
+      role: 'customer',
+      createdAt: new Date().toISOString(),
+    })
+
+    // Provider notification
+    if (currentRole === 'provider' && currentProviderId === providerId) {
+      const providerMsg = `You received a ${score}-star rating for order ${orderId}.`
+      notify('EcoFluffa – New Rating', { body: providerMsg, tag: `new-rating-${orderId}` })
+      addNotification({
+        type: 'order_update',
+        title: '⭐ New Rating Received',
+        body: providerMsg,
+        orderId,
+        role: 'provider',
+        createdAt: new Date().toISOString(),
       })
+    }
+
     return true
   }
 
@@ -480,6 +525,75 @@ export function usePlatform() {
 
   const cancelOrder = (id: string, actorName: string, actor: UserRole = 'customer') =>
     updateOrderStatus(id, 'cancelled', actor, actorName)
+
+  const confirmDelivery = async (orderId: string, actorName: string) => {
+    const order = orders.value.find((o) => o.id === orderId)
+    if (!order || order.delivery_confirmed) return
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ 
+        delivery_confirmed: true, 
+        delivery_confirmed_at: new Date().toISOString() 
+      })
+      .eq('id', orderId)
+
+    if (error) return false
+
+    // Update local state
+    if (order) {
+      order.delivery_confirmed = true
+      order.delivery_confirmed_at = new Date().toISOString()
+    }
+
+    // Add activity log
+    const activity = {
+      order_id: orderId,
+      type: 'status' as const,
+      title: 'Delivery Confirmed',
+      detail: `${actorName} confirmed receipt of order ${orderId}.`,
+      actor_role: 'customer' as UserRole,
+      actor_name: actorName,
+    } as Omit<OrderActivity, 'id' | 'created_at'>
+
+    const { data: actData } = await supabase
+      .from('order_activities')
+      .insert(activity)
+      .select()
+      .single()
+    if (actData) activities.value.unshift(actData as OrderActivity)
+
+    // Send notifications
+    const { addNotification } = useInAppNotifications()
+    const { show } = useToast()
+    const { notify } = useWebNotifications()
+    
+    // Customer notification
+    show('Delivery confirmed! Thank you for using EcoFluffa.', 'success', 5000)
+    notify('EcoFluffa – Delivery Confirmed', { body: `Order ${orderId} delivery confirmed.`, tag: `delivery-confirmed-${orderId}` })
+    addNotification({
+      type: 'order_update',
+      title: '✅ Delivery Confirmed',
+      body: `Order ${orderId} delivery confirmed. Thank you for using EcoFluffa!`,
+      orderId,
+      role: 'customer',
+      createdAt: new Date().toISOString(),
+    })
+
+    // Provider notification (always notify the provider when customer confirms delivery)
+    const providerMsg = `Customer confirmed delivery for order ${orderId}.`
+    notify('EcoFluffa – Delivery Confirmed', { body: providerMsg, tag: `delivery-confirmed-${orderId}` })
+    addNotification({
+      type: 'order_update',
+      title: '✅ Delivery Confirmed by Customer',
+      body: providerMsg,
+      orderId,
+      role: 'provider',
+      createdAt: new Date().toISOString(),
+    })
+
+    return true
+  }
 
   const getFlowStepIndex = (status: OrderStatus) => {
     if (status === 'cancelled') return -1
@@ -646,6 +760,7 @@ export function usePlatform() {
     getMessagesForOrder,
     rescheduleOrder,
     cancelOrder,
+    confirmDelivery,
     getFlowStepIndex,
     getNextStatus,
     createOrder,

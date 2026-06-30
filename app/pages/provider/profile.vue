@@ -55,11 +55,63 @@
         />
       </div>
     </form>
+
+    <!-- Ratings Section -->
+    <div class="mt-8">
+      <SectionHeader title="Customer Ratings" subtitle="See what customers are saying about your service" />
+      
+      <div v-if="ratings.length === 0" class="bg-surface border border-theme rounded-xl p-8 text-center">
+        <Icon name="mdi:star-outline" size="40" style="color: var(--text-muted);" />
+        <div class="text-muted text-sm mt-3">No ratings yet. Complete orders to receive customer feedback!</div>
+      </div>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="rating in ratings.slice(0, 10)"
+          :key="rating.id"
+          class="bg-surface border border-theme rounded-xl p-5"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-1">
+                  <Icon
+                    v-for="i in 5"
+                    :key="i"
+                    :name="i <= rating.score ? 'mdi:star' : 'mdi:star-outline'"
+                    size="16"
+                    :style="i <= rating.score ? 'color: #f59e0b;' : 'color: var(--text-muted);'"
+                  />
+                </div>
+                <span class="text-xs font-bold" style="color: var(--text-muted);">
+                  {{ rating.score }}/5
+                </span>
+              </div>
+              <p v-if="rating.comment" class="text-sm mt-2" style="color: var(--text-primary);">
+                {{ rating.comment }}
+              </p>
+              <p v-else class="text-sm italic mt-2" style="color: var(--text-muted);">
+                No comment provided
+              </p>
+              <div class="text-xs mt-3" style="color: var(--text-faint);">
+                Order {{ rating.order_id }} • {{ formatDate(rating.created_at) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="ratings.length > 10" class="text-center">
+          <div class="text-sm" style="color: var(--text-muted);">
+            Showing 10 of {{ ratings.length }} ratings
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const { fetchMyProvider, provider, updateProvider, isApproved, isPendingApproval, needsOnboarding } = useProviderProfile()
+const { fetchMyProvider, provider, updateProvider, isApproved, isPendingApproval, needsOnboarding, ratings } = useProviderProfile()
 const { success } = useToast()
 
 const businessName = ref('')
@@ -107,6 +159,16 @@ const save = async () => {
   }
   saved.value = true
   success('Business profile updated.')
+}
+
+const formatDate = (iso: string) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(iso))
+  } catch { return iso }
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role', 'provider-onboarding'] })

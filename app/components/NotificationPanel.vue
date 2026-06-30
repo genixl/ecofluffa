@@ -2,7 +2,7 @@
   <Transition name="panel">
     <div
       v-if="open"
-      class="absolute left-0 mt-2 w-80 rounded-2xl shadow-2xl overflow-hidden z-[200]"
+      class="absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl overflow-hidden z-[200]"
       style="
         background-color: var(--bg-surface);
         border: 1px solid var(--border-color);

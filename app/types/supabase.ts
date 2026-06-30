@@ -80,6 +80,8 @@ export interface Order {
   notes: string
   total_estimate: string
   created_at: string
+  delivery_confirmed: boolean
+  delivery_confirmed_at: string | null
   // joined
   customer?: Profile
   provider?: Provider
