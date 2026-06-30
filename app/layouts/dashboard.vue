@@ -8,7 +8,7 @@
       </Transition>
 
       <aside
-        class="fixed top-0 left-0 h-full w-72 lg:w-64 z-[60] flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0"
+        class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-72 lg:w-64 z-[60] flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         style="background-color: var(--bg-surface); border-right: 1px solid var(--border-color); box-shadow: var(--shadow-md);"
       >
@@ -83,11 +83,25 @@
         </div>
         <div
           v-else-if="notifIsGranted"
-          class="mx-3 mb-3 px-4 py-2 rounded-xl flex items-center gap-2"
+          class="mx-3 mb-3 px-4 py-2 rounded-xl flex items-center justify-between"
           style="background-color: var(--bg-subtle);"
         >
-          <Icon name="mdi:bell-check" size="16" style="color: #10b981; flex-shrink:0;" />
-          <span class="text-xs font-medium" style="color: var(--text-muted);">Notifications on</span>
+          <div class="flex items-center gap-2">
+            <Icon :name="notificationsEnabled ? 'mdi:bell-check' : 'mdi:bell-off'" :size="16" :style="notificationsEnabled ? 'color: #10b981;' : 'color: var(--text-muted);'" style="flex-shrink:0;" />
+            <span class="text-xs font-medium" style="color: var(--text-muted);">{{ notificationsEnabled ? 'Notifications on' : 'Notifications off' }}</span>
+          </div>
+          <button
+            @click="notificationsEnabled = !notificationsEnabled"
+            class="relative w-10 h-6 rounded-full transition-all duration-300"
+            :style="notificationsEnabled ? 'background-color: var(--brand-blue);' : 'background-color: var(--bg-base);'"
+            :aria-label="notificationsEnabled ? 'Turn off notifications' : 'Turn on notifications'"
+            aria-pressed="true"
+          >
+            <span
+              class="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300"
+              :style="notificationsEnabled ? 'left: calc(100% - 1.25rem);' : 'left: 0.25rem;'"
+            />
+          </button>
         </div>
 
         <div class="px-3 pb-5" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
@@ -165,6 +179,7 @@ const sidebarOpen = ref(false)
 const bellOpen = ref(false)
 const bellContainerDesktop = ref<HTMLElement | null>(null)
 const bellContainerMobile = ref<HTMLElement | null>(null)
+const notificationsEnabled = ref(true)
 
 const { unreadCount } = useInAppNotifications()
 
