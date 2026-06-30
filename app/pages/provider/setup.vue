@@ -61,7 +61,33 @@
         </div>
 
         <div v-if="showForm" class="border border-theme rounded-xl p-5 mb-4">
-          <div class="mb-4">
+          <div class="font-bold text-lg mb-1" style="color: var(--brand-blue);">
+            {{ editingId ? 'Edit Service' : (isCustomService ? 'Add Custom Service' : 'Add Service from Catalog') }}
+          </div>
+          <div class="text-muted text-sm mb-4">
+            {{ isCustomService
+              ? 'Custom services are private to your account until an admin approves them.'
+              : 'Choose from the shared platform catalog of default services.' }}
+          </div>
+
+          <div v-if="!editingId" class="mb-4">
+            <div class="flex gap-3">
+              <button
+                @click="isCustomService = false"
+                :class="['px-4 py-2 rounded-lg font-semibold text-sm transition-all', !isCustomService ? 'bg-brand-blue text-white' : 'bg-surface border-2 border-theme text-primary']"
+              >
+                From Catalog
+              </button>
+              <button
+                @click="isCustomService = true"
+                :class="['px-4 py-2 rounded-lg font-semibold text-sm transition-all', isCustomService ? 'bg-brand-blue text-white' : 'bg-surface border-2 border-theme text-primary']"
+              >
+                Custom Service
+              </button>
+            </div>
+          </div>
+
+          <div v-if="!editingId && !isCustomService" class="mb-4">
             <label class="block text-primary mb-2 font-semibold text-sm">Service</label>
             <select
               v-model="form.service_id"
@@ -72,6 +98,19 @@
               <option v-for="s in availableToAdd" :key="s.id" :value="s.id">{{ s.title }}</option>
             </select>
           </div>
+
+          <div v-if="!editingId && isCustomService" class="space-y-4 mb-4">
+            <InputField label="Service Title" type="text" placeholder="e.g. Leather Jacket Cleaning" v-model="form.title" />
+            <div>
+              <label class="block text-primary mb-2 font-semibold text-sm">Category</label>
+              <select v-model="form.category"
+                class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all">
+                <option v-for="cat in categories.filter(c => c !== 'All')" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
+            <InputField label="Description" type="text" placeholder="Brief description of the service" v-model="form.description" />
+          </div>
+
           <InputField label="Price (KSh)" type="text" v-model="form.price" placeholder="195" />
           <InputField label="Unit" type="text" v-model="form.unit" placeholder="per kg" />
           <InputField label="Turnaround" type="text" v-model="form.turnaround" placeholder="24 hrs" />
@@ -152,6 +191,7 @@
 <script setup lang="ts">
 import type { ProviderService } from '~/types/supabase'
 import { isProviderBusinessComplete } from '~/composables/useProviderProfile'
+import { isCatalogService } from '~/types/supabase'
 
 const { profile, ensureProviderLink, fetchProfile } = useAuth()
 const {
@@ -167,6 +207,8 @@ const {
   submitForApproval,
   canPublish,
 } = useProviderProfile()
+const { createService, categories } = useServices()
+const { success } = useToast()
 
 const pageLoading = ref(true)
 const publishing = ref(false)
@@ -183,7 +225,8 @@ const pickupFee = ref('Free pickup')
 
 const showForm = ref(false)
 const editingId = ref<string | null>(null)
-const form = ref({ service_id: '', price: '', unit: '', turnaround: '' })
+const isCustomService = ref(false)
+const form = ref({ service_id: '', price: '', unit: '', turnaround: '', title: '', category: 'Everyday', description: '' })
 
 watch(profile, (p) => {
   if (!p) return
@@ -231,7 +274,12 @@ const ensureProviderExists = async () => {
   if (!profile.value?.id) return false
   
   // Try to ensure provider link exists
-  await ensureProviderLink(profile.value.id, profile.value.full_name || 'Provider')
+  const result = await ensureProviderLink(profile.value.id, profile.value.full_name || 'Provider')
+  
+  if (!result.success) {
+    console.error('Provider link failed:', result.error)
+    return false
+  }
   
   await fetchProfile(profile.value.id)
   if (profile.value?.provider_id) await fetchMyProvider()
@@ -240,8 +288,11 @@ const ensureProviderExists = async () => {
 }
 
 onMounted(async () => {
-  await ensureProviderExists()
+  console.log('Setup page mounted, profile:', profile.value)
+  const providerExists = await ensureProviderExists()
+  console.log('ensureProviderExists result:', providerExists, 'provider_id:', profile.value?.provider_id)
   await fetchMyProvider()
+  console.log('fetchMyProvider completed, catalogServices count:', catalogServices.value.length)
   pageLoading.value = false
 })
 
@@ -260,17 +311,22 @@ const saveBusiness = async () => {
 
 const openAdd = () => {
   editingId.value = null
-  form.value = { service_id: '', price: '', unit: '', turnaround: '' }
+  isCustomService.value = false
+  form.value = { service_id: '', price: '', unit: '', turnaround: '', title: '', category: 'Everyday', description: '' }
   showForm.value = true
 }
 
 const openEdit = (ps: ProviderService) => {
   editingId.value = ps.id
+  isCustomService.value = false
   form.value = {
     service_id: ps.service_id,
     price: ps.price,
     unit: ps.unit,
     turnaround: ps.turnaround,
+    title: '',
+    category: 'Everyday',
+    description: ''
   }
   showForm.value = true
 }
@@ -278,6 +334,7 @@ const openEdit = (ps: ProviderService) => {
 const closeForm = () => {
   showForm.value = false
   editingId.value = null
+  isCustomService.value = false
   serviceError.value = ''
 }
 
@@ -287,7 +344,7 @@ const saveService = async () => {
   // Ensure provider link exists before trying to add service
   const hasProvider = await ensureProviderExists()
   if (!hasProvider) {
-    serviceError.value = 'Provider profile could not be initialized. Please refresh the page and try again.'
+    serviceError.value = 'Provider profile could not be initialized. Please check the browser console for details and ensure your RLS policies allow provider creation.'
     return
   }
   
@@ -300,9 +357,34 @@ const saveService = async () => {
   try {
     if (editingId.value) {
       result = await updateService(editingId.value, form.value.price, form.value.unit, form.value.turnaround)
+    } else if (isCustomService.value) {
+      if (!form.value.title || !form.value.description) {
+        serviceError.value = 'Please fill in service title and description'
+        savingService.value = false
+        return
+      }
+      const providerId = profile.value?.provider_id || null
+      const serviceId = await createService({
+        title: form.value.title,
+        category: form.value.category,
+        price_label: `From KSh ${form.value.price} ${form.value.unit}`,
+        description: form.value.description,
+        turnaround: form.value.turnaround,
+        popular: false,
+        provider_id: providerId,
+      })
+      if (serviceId) {
+        result = await addService(serviceId, form.value.price, form.value.unit, form.value.turnaround)
+        success('Custom service submitted for admin approval.')
+      } else {
+        serviceError.value = 'Failed to create custom service'
+        savingService.value = false
+        return
+      }
     } else {
       if (!form.value.service_id) {
         serviceError.value = 'Please select a service'
+        savingService.value = false
         return
       }
       result = await addService(form.value.service_id, form.value.price, form.value.unit, form.value.turnaround)

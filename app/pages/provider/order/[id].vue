@@ -63,7 +63,7 @@
               {{ customerDisplayPhone }}
             </a>
             <div v-else class="text-muted text-sm">N/A</div>
-            <div class="text-muted text-xs mt-1">Contact details saved from the customer's profile at booking time.</div>
+            <!-- <div class="text-muted text-xs mt-1">Contact details saved from the customer's profile at booking time.</div> -->
           </div>
 
           <div class="bg-surface border border-theme rounded-xl p-5">

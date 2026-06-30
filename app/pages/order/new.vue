@@ -10,7 +10,7 @@
         <Icon name="mdi:arrow-left" size="18" /> {{ backLabel }}
       </NuxtLink>
 
-      <SectionHeader title="Book Your Pickup" subtitle="Your profile details are pre-filled below — confirm and book" />
+      <SectionHeader title="Book Your Pickup" subtitle="Your profile details are pre-filled below-confirm and book" />
 
       <div v-if="loadingData" class="text-center py-12 text-muted">Loading…</div>
 
@@ -111,7 +111,7 @@
                     :key="s.service_id"
                     :value="s.service_id"
                   >
-                    {{ s.service?.title }} — KSh {{ s.price }} {{ s.unit }}
+                    {{ s.service?.title }}-KSh {{ s.price }} {{ s.unit }}
                   </option>
                 </select>
                 <AppButton label="Add" variant="primary" type="button" :disabled="!serviceToAdd" @click="addAnotherService" />
@@ -123,7 +123,7 @@
           <!-- Contact from profile -->
           <div class="rounded-xl p-4" style="background-color: var(--bg-subtle); border: 1px solid var(--border-color);">
             <div class="text-xs font-bold uppercase tracking-wide mb-3" style="color: var(--brand-blue);">Your contact details</div>
-            <p class="text-xs mb-3" style="color: var(--text-muted);">Taken from your profile — visible to the provider with this order.</p>
+            <p class="text-xs mb-3" style="color: var(--text-muted);">Taken from your profile-visible to the provider with this order.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField label="Full Name" type="text" placeholder="Your full name" v-model="customerName" />
               <InputField label="Phone Number" type="tel" placeholder="+254 7XX XXX XXX" v-model="customerPhone" />
@@ -367,7 +367,7 @@ const submitOrder = async () => {
   })
 
   submitting.value = false
-  if (!id) { formError.value = 'Failed to place order. The provider may not be approved yet — please try again or choose another provider.'; return }
+  if (!id) { formError.value = 'Failed to place order. The provider may not be approved yet-please try again or choose another provider.'; return }
   success('Booking confirmed! Your provider will be notified.')
   router.push(`/customer/order/${id}`)
 }
