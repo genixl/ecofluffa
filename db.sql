@@ -8,6 +8,8 @@ CREATE TABLE public.profiles (
   role text NOT NULL DEFAULT 'customer'::text CHECK (role = ANY (ARRAY['customer'::text, 'provider'::text, 'admin'::text])),
   provider_id uuid,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  preferred_pickup_notes text NOT NULL DEFAULT ''::text,
+  alternate_phone text NOT NULL DEFAULT ''::text,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
@@ -21,10 +23,10 @@ CREATE TABLE public.providers (
   phone text NOT NULL DEFAULT ''::text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   is_listed boolean NOT NULL DEFAULT false,
+  approval_status text NOT NULL DEFAULT 'pending'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'disabled'::text])),
   CONSTRAINT providers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.services (
-  id text NOT NULL,
   title text NOT NULL,
   category text NOT NULL DEFAULT 'Everyday'::text,
   price_label text NOT NULL DEFAULT ''::text,
@@ -32,16 +34,20 @@ CREATE TABLE public.services (
   turnaround text NOT NULL DEFAULT ''::text,
   popular boolean NOT NULL DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT services_pkey PRIMARY KEY (id)
+  provider_id uuid,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  approval_status text NOT NULL DEFAULT 'approved'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
+  CONSTRAINT services_pkey PRIMARY KEY (id),
+  CONSTRAINT services_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id)
 );
 CREATE TABLE public.provider_services (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   provider_id uuid NOT NULL,
-  service_id text NOT NULL,
   price text NOT NULL,
   unit text NOT NULL,
   turnaround text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  service_id uuid NOT NULL,
   CONSTRAINT provider_services_pkey PRIMARY KEY (id),
   CONSTRAINT provider_services_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id),
   CONSTRAINT provider_services_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id)
@@ -57,6 +63,8 @@ CREATE TABLE public.orders (
   notes text NOT NULL DEFAULT ''::text,
   total_estimate text NOT NULL DEFAULT ''::text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  customer_phone text NOT NULL DEFAULT ''::text,
+  customer_name text NOT NULL DEFAULT ''::text,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.profiles(id),
   CONSTRAINT orders_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id)

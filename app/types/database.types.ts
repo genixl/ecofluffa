@@ -124,6 +124,10 @@ export type Database = {
           notes: string
           total_estimate: string
           created_at: string
+          customer_phone: string
+          customer_name: string
+          delivery_confirmed: boolean
+          delivery_confirmed_at: string | null
         }
         Insert: {
           id?: string
@@ -135,6 +139,10 @@ export type Database = {
           pickup_address: string
           notes?: string
           total_estimate?: string
+          customer_phone?: string
+          customer_name?: string
+          delivery_confirmed?: boolean
+          delivery_confirmed_at?: string | null
         }
         Update: {
           status?: 'pending' | 'washing' | 'ready' | 'delivered' | 'cancelled'
@@ -142,6 +150,8 @@ export type Database = {
           pickup_date?: string
           pickup_address?: string
           notes?: string
+          delivery_confirmed?: boolean
+          delivery_confirmed_at?: string | null
         }
       }
       order_services: {

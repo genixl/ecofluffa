@@ -81,12 +81,12 @@ export function useAuth() {
     return await fetchProfile(userId)
   }
 
-  const ensureProviderLink = async (userId: string, fullName: string) => {
+  const ensureProviderLink = async (userId: string, fullName: string): Promise<{ success: boolean; error?: string }> => {
     const current = profile.value ?? (await fetchProfile(userId))
-    if (!current) return
+    if (!current) return { success: false, error: 'Profile not found' }
 
-    // Already linked — nothing to do
-    if (current.provider_id) return
+    // Already linked-nothing to do
+    if (current.provider_id) return { success: true }
 
     // Step 1: Ensure the profile role is 'provider' in the DB before inserting
     // the provider row. The RLS with_check on providers_insert_own reads
@@ -99,14 +99,14 @@ export function useAuth() {
 
       if (roleError) {
         console.error('Failed to set provider role:', roleError.message)
-        return
+        return { success: false, error: `Failed to set provider role: ${roleError.message}` }
       }
 
       // Refresh local profile so subsequent reads see the updated role
       await fetchProfile(userId)
     }
 
-    // Step 2: Now insert the provider row — RLS with_check will pass
+    // Step 2: Now insert the provider row-RLS with_check will pass
     const { data: providerData, error: providerError } = await supabase
       .from('providers')
       .insert({
@@ -120,7 +120,7 @@ export function useAuth() {
 
     if (providerError || !providerData) {
       console.error('Failed to create provider record:', providerError?.message)
-      return
+      return { success: false, error: `Failed to create provider record (RLS may be blocking insert): ${providerError?.message || 'Unknown error'}` }
     }
 
     // Step 3: Link provider_id back to the profile
@@ -131,10 +131,11 @@ export function useAuth() {
 
     if (linkError) {
       console.error('Failed to link provider_id to profile:', linkError.message)
-      return
+      return { success: false, error: `Failed to link provider_id to profile: ${linkError.message}` }
     }
 
     await fetchProfile(userId)
+    return { success: true }
   }
 
   const getRedirectPath = (userRole?: UserRole | null) => {
@@ -191,7 +192,13 @@ export function useAuth() {
       }
 
       if (ensured.role === 'provider') {
-        await ensureProviderLink(userId, ensured.full_name || fullName)
+        const linkResult = await ensureProviderLink(userId, ensured.full_name || fullName)
+        if (!linkResult.success) {
+          return {
+            error: `Provider account setup failed: ${linkResult.error}`,
+            needsEmailConfirmation: false,
+          }
+        }
       }
 
       await waitForAuthReady()
@@ -265,7 +272,13 @@ export function useAuth() {
       }
 
       if (role === 'provider') {
-        await ensureProviderLink(userId, fullName)
+        const linkResult = await ensureProviderLink(userId, fullName)
+        if (!linkResult.success) {
+          return {
+            error: `Provider account setup failed: ${linkResult.error}`,
+            needsEmailConfirmation: false,
+          }
+        }
       }
 
       await waitForAuthReady()

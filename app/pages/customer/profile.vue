@@ -26,6 +26,22 @@
         placeholder="+254 7XX XXX XXX"
         v-model="phone"
       />
+      <InputField
+        label="Alternate phone (optional)"
+        type="tel"
+        placeholder="+254 7XX XXX XXX"
+        v-model="alternatePhone"
+      />
+      <div>
+        <label class="block text-muted mb-2 font-semibold text-sm">Default pickup notes (optional)</label>
+        <textarea
+          v-model="preferredPickupNotes"
+          rows="3"
+          placeholder="Gate code, landmarks, or instructions you'd like pre-filled when booking…"
+          class="w-full border-2 border-theme bg-surface text-primary px-4 py-3 rounded-lg focus:outline-none focus:border-brand-blue-700 transition-all resize-none"
+        />
+        <p class="text-xs text-muted mt-1.5">These notes are automatically included when you place a new order.</p>
+      </div>
 
       <div v-if="saveError" class="text-red-500 text-sm mt-2">{{ saveError }}</div>
       <div v-if="saved" class="text-brand-blue text-sm mt-2">Profile saved.</div>
@@ -205,6 +221,8 @@ const { success, error: toastError } = useToast()
 
 const fullName = ref('')
 const phone = ref('')
+const alternatePhone = ref('')
+const preferredPickupNotes = ref('')
 const saving = ref(false)
 const saved = ref(false)
 const saveError = ref('')
@@ -217,6 +235,8 @@ watch(
     if (!p) return
     fullName.value = p.full_name
     phone.value = p.phone
+    alternatePhone.value = p.alternate_phone ?? ''
+    preferredPickupNotes.value = p.preferred_pickup_notes ?? ''
   },
   { immediate: true }
 )
@@ -229,7 +249,12 @@ const save = async () => {
 
   const { error } = await supabase
     .from('profiles')
-    .update({ full_name: fullName.value, phone: phone.value })
+    .update({
+      full_name: fullName.value,
+      phone: phone.value,
+      alternate_phone: alternatePhone.value,
+      preferred_pickup_notes: preferredPickupNotes.value,
+    })
     .eq('id', profile.value.id)
 
   saving.value = false

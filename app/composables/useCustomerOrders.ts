@@ -46,6 +46,7 @@ export function useCustomerOrders() {
     getFlowStepIndex: platform.getFlowStepIndex,
     cancelOrder,
     rescheduleOrder,
+    confirmDelivery: platform.confirmDelivery,
     recentActivities,
     addMessage: platform.addMessage,
     getMessagesForOrder: platform.getMessagesForOrder,

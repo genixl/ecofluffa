@@ -1,4 +1,4 @@
-import type { OrderStatus, Profile, Provider } from '~/types/supabase'
+import type { OrderStatus, Profile, Provider, Service } from '~/types/supabase'
 
 export interface AdminOrderStats {
   today: number
@@ -143,8 +143,75 @@ export function useAdminPlatform() {
       providers.value = []
       return
     }
-    console.log('Loaded providers:', data?.length || 0)
     providers.value = data as Provider[]
+  }
+
+  const approveProvider = async (providerId: string) => {
+    const { error } = await supabase
+      .from('providers')
+      .update({ approval_status: 'approved', is_listed: true })
+      .eq('id', providerId)
+    if (error) return { error: error.message }
+    await loadProviders()
+    return { error: null }
+  }
+
+  const disableProvider = async (providerId: string) => {
+    const { error } = await supabase
+      .from('providers')
+      .update({ approval_status: 'disabled', is_listed: false })
+      .eq('id', providerId)
+    if (error) return { error: error.message }
+    await loadProviders()
+    return { error: null }
+  }
+
+  const restoreProvider = async (providerId: string) => {
+    const { error } = await supabase
+      .from('providers')
+      .update({ approval_status: 'approved', is_listed: true })
+      .eq('id', providerId)
+    if (error) return { error: error.message }
+    await loadProviders()
+    return { error: null }
+  }
+
+  const pendingCustomServices = useState<Service[]>('admin-pending-services', () => [])
+
+  const loadPendingCustomServices = async () => {
+    const { data, error } = await supabase
+      .from('services')
+      .select('*, provider:providers(id, name)')
+      .not('provider_id', 'is', null)
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Failed to load pending custom services', error)
+      pendingCustomServices.value = []
+      return
+    }
+    pendingCustomServices.value = data as Service[]
+  }
+
+  const approveCustomService = async (serviceId: string) => {
+    const { error } = await supabase
+      .from('services')
+      .update({ approval_status: 'approved' })
+      .eq('id', serviceId)
+    if (error) return { error: error.message }
+    await loadPendingCustomServices()
+    return { error: null }
+  }
+
+  const rejectCustomService = async (serviceId: string) => {
+    const { error } = await supabase
+      .from('services')
+      .update({ approval_status: 'rejected' })
+      .eq('id', serviceId)
+    if (error) return { error: error.message }
+    await loadPendingCustomServices()
+    return { error: null }
   }
 
   const loadCustomers = async () => {
@@ -233,9 +300,16 @@ export function useAdminPlatform() {
     customers,
     reports,
     loaded,
+    pendingCustomServices,
     loadStats,
     loadProviders,
     loadCustomers,
     loadReports,
+    approveProvider,
+    disableProvider,
+    restoreProvider,
+    loadPendingCustomServices,
+    approveCustomService,
+    rejectCustomService,
   }
 }

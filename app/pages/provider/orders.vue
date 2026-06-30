@@ -33,50 +33,51 @@
       <div class="text-muted text-sm mt-1">Check another tab or wait for new bookings.</div>
     </div>
 
-    <div v-else class="bg-surface border border-theme rounded-xl overflow-hidden shadow-theme-sm">
-      <table class="w-full text-left">
-        <thead class="bg-subtle border-b border-theme">
-          <tr>
-            <th class="p-4 text-xs font-semibold text-muted uppercase">Order</th>
-            <th class="p-4 text-xs font-semibold text-muted uppercase">Customer</th>
-            <th class="p-4 text-xs font-semibold text-muted uppercase">Status</th>
-            <th class="p-4 text-xs font-semibold text-muted uppercase">Pickup Date</th>
-            <th class="p-4 text-xs font-semibold text-muted uppercase" />
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-border-theme">
-          <tr
-            v-for="o in filteredOrders"
-            :key="o.id"
-            class="hover:bg-subtle transition-colors"
-          >
-            <td class="p-4">
-              <div class="font-semibold text-primary">{{ o.id }}</div>
+    <div v-else class="space-y-3">
+      <div
+        v-for="o in filteredOrders"
+        :key="o.id"
+        class="bg-surface border border-theme rounded-xl p-5 shadow-theme-sm hover:shadow-md transition-all cursor-pointer"
+        @click="navigateTo(`/provider/order/${o.id}`)"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="font-bold text-lg" style="color: var(--brand-blue);">{{ o.id }}</div>
+              <OrderStatusBadge :status="o.status" />
               <span
                 v-if="getUrgency(o)"
-                class="inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full"
+                class="text-xs font-bold px-2 py-1 rounded-full"
                 :style="getUrgency(o) === 'overdue'
                   ? 'background-color: #fee2e2; color: #ef4444;'
                   : 'background-color: #ffedd5; color: #ea580c;'"
               >
                 {{ getUrgency(o) === 'overdue' ? '⚠ Overdue' : '📅 Today' }}
               </span>
-            </td>
-            <td class="p-4 text-sm text-primary">{{ o.customer?.full_name ?? 'N/A' }}</td>
-            <td class="p-4"><OrderStatusBadge :status="o.status" /></td>
-            <td class="p-4 text-sm text-muted">{{ o.pickup_date }}</td>
-            <td class="p-4">
-              <NuxtLink
-                :to="`/provider/order/${o.id}`"
-                class="font-semibold text-sm hover:underline"
-                style="color: var(--brand-blue);"
-              >
-                Manage →
-              </NuxtLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+              <div class="flex items-center gap-1.5" style="color: var(--text-muted);">
+                <Icon name="mdi:account" size="16" />
+                <span>{{ o.customer?.full_name ?? 'N/A' }}</span>
+              </div>
+              <div class="flex items-center gap-1.5" style="color: var(--text-muted);">
+                <Icon name="mdi:calendar" size="16" />
+                <span>{{ o.pickup_date }}</span>
+              </div>
+              <div class="flex items-center gap-1.5" style="color: var(--text-muted);">
+                <Icon name="mdi:clock" size="16" />
+                <span>{{ o.pickup_time }}</span>
+              </div>
+            </div>
+            <div class="mt-2 text-sm" style="color: var(--text-muted);">
+              {{ o.pickup_address }}
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <Icon name="mdi:chevron-right" size="20" style="color: var(--brand-blue);" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -100,14 +101,14 @@ const getUrgency = (o: { pickup_date: string; status: string }) => {
   return null
 }
 
-// Sort: urgency first (overdue → today → future), then by date
+// Sort: urgency first (overdue → today → future), then by date (newest first)
 const sortedOrders = computed(() =>
   [...orders.value].sort((a, b) => {
     const urgencyRank = { overdue: 0, today: 1, null: 2 }
     const ra = urgencyRank[getUrgency(a) ?? 'null'] ?? 2
     const rb = urgencyRank[getUrgency(b) ?? 'null'] ?? 2
     if (ra !== rb) return ra - rb
-    return a.pickup_date.localeCompare(b.pickup_date)
+    return b.pickup_date.localeCompare(a.pickup_date)
   })
 )
 

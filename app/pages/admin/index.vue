@@ -70,6 +70,9 @@
             <NuxtLink to="/admin/providers" class="flex items-center gap-2 text-sm font-semibold text-brand-blue hover:underline">
               <Icon name="mdi:store" size="18" /> View Providers
             </NuxtLink>
+            <NuxtLink to="/admin/custom-services" class="flex items-center gap-2 text-sm font-semibold text-brand-blue hover:underline">
+              <Icon name="mdi:clipboard-check-outline" size="18" /> Review Custom Services
+            </NuxtLink>
             <NuxtLink to="/admin/customers" class="flex items-center gap-2 text-sm font-semibold text-brand-blue hover:underline">
               <Icon name="mdi:account-group" size="18" /> View Customers
             </NuxtLink>

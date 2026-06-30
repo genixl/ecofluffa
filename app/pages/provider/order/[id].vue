@@ -13,9 +13,19 @@
         <div>
           <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
           <div class="text-primary mt-2">Customer Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}</div>
-          <div class="text-primary text-sm mt-1">Customer: {{ order.customer?.full_name }}</div>
+          <div class="text-primary text-sm mt-1">Customer: {{ customerDisplayName }}</div>
         </div>
-        <OrderStatusBadge :status="order.status" />
+        <div class="flex items-center gap-3">
+          <OrderStatusBadge :status="order.status" />
+          <div
+            v-if="order.status === 'delivered' && order.delivery_confirmed"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5"
+            style="background-color: #d1fae5; color: #10b981;"
+          >
+            <Icon name="mdi:check-circle" size="14" />
+            Delivery Confirmed
+          </div>
+        </div>
       </div>
 
       <div class="mt-8">
@@ -54,8 +64,16 @@
 
           <div class="bg-surface border border-theme rounded-xl p-5">
             <div class="text-xs font-semibold text-muted mb-1">Customer Contact</div>
-            <div class="text-primary">{{ order.customer?.phone || 'N/A' }}</div>
-            <div class="text-muted text-xs mt-1">Call or text to confirm pickup time.</div>
+            <div class="text-primary font-semibold">{{ customerDisplayName }}</div>
+            <a
+              v-if="customerDisplayPhone"
+              :href="`tel:${customerDisplayPhone}`"
+              class="text-brand-blue font-semibold text-sm mt-1 inline-block hover:underline"
+            >
+              {{ customerDisplayPhone }}
+            </a>
+            <div v-else class="text-muted text-sm">N/A</div>
+            <!-- <div class="text-muted text-xs mt-1">Contact details saved from the customer's profile at booking time.</div> -->
           </div>
 
           <div class="bg-surface border border-theme rounded-xl p-5">
@@ -129,6 +147,18 @@ onMounted(async () => {
 const order = computed(() => getOrderById(routeId.value))
 const currentFlowIndex = computed(() => order.value ? getFlowStepIndex(order.value.status) : -1)
 const providerName = computed(() => order.value?.provider?.name ?? profile.value?.full_name ?? 'Provider')
+
+const customerDisplayName = computed(() =>
+  order.value?.customer_name?.trim()
+  || order.value?.customer?.full_name
+  || 'Customer'
+)
+
+const customerDisplayPhone = computed(() =>
+  order.value?.customer_phone?.trim()
+  || order.value?.customer?.phone
+  || ''
+)
 
 const orderActivities = computed(() =>
   recentActivities.value

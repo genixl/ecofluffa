@@ -37,3 +37,5 @@ add-customer-addresses.sql
 fix-provider-rls.sql
 add-services-rls.sql
 alter-services-id-to-uuid.sql
+add-services-provider-fk.sql
+provider-rls-policies.sql
