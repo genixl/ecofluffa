@@ -59,7 +59,7 @@
               class="shrink-0 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 flex items-center gap-2"
               style="background-color: var(--brand-orange);">
               <Icon name="mdi:calendar-check" size="18" />
-              Book a Service
+              View Services
             </button>
           </div>
         </div>
@@ -107,14 +107,13 @@
                   <div class="font-bold text-lg" style="color: var(--brand-orange);">KSh {{ offer.price }}</div>
                   <div class="text-xs" style="color: var(--text-muted);">{{ offer.unit }} · {{ offer.turnaround }}</div>
                 </div>
-                <NuxtLink
-                  :to="`/order/new?provider=${provider.id}&service=${offer.service_id}`"
+                <!-- <button
+                  @click="handleBook(provider.id, offer.service_id)"
                   class="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
                   style="background-color: var(--brand-orange);"
-                  @click.stop
                 >
                   Book
-                </NuxtLink>
+                </button> -->
               </div>
             </div>
           </div>
@@ -129,12 +128,12 @@
               <div class="font-bold truncate">{{ offers.find(o => o.service_id === selectedServiceId)?.service?.title }}</div>
               <div class="text-xs opacity-80">with {{ provider.name }}</div>
             </div>
-            <NuxtLink
-              :to="`/order/new?provider=${provider.id}&service=${selectedServiceId}`"
+            <button
+              @click="handleBook(provider.id, selectedServiceId)"
               class="shrink-0 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:opacity-90"
               style="background-color: var(--brand-orange); color: #fff;">
               Book Now →
-            </NuxtLink>
+            </button>
           </div>
         </Transition>
 
@@ -146,6 +145,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const { providers, providerServices, refreshCatalog } = useServices()
+const { isLoggedIn } = useAuth()
 
 onMounted(() => {
   refreshCatalog()
@@ -174,6 +174,16 @@ watchEffect(() => {
 
 const scrollToServices = () => {
   document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })
+}
+
+const handleBook = (providerId: string, serviceId: string) => {
+  if (!isLoggedIn.value) {
+    // Redirect to login with return URL
+    const returnUrl = `/order/new?provider=${providerId}&service=${serviceId}`
+    navigateTo(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`)
+  } else {
+    navigateTo(`/order/new?provider=${providerId}&service=${serviceId}`)
+  }
 }
 
 const serviceIcon = (id: string) => {

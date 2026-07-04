@@ -146,14 +146,14 @@ export function useAuth() {
   }
 
   const waitForSessionUserId = async (): Promise<string | null> => {
-    const { data } = await supabase.auth.getSession()
-    if (data.session?.user?.id) return data.session.user.id
+    const { data } = await supabase.auth.getUser()
+    if (data.user?.id) return data.user.id
 
     for (const ms of PROFILE_RETRY_MS) {
       await delay(ms)
       if (user.value?.id) return user.value.id
-      const retry = await supabase.auth.getSession()
-      if (retry.data.session?.user?.id) return retry.data.session.user.id
+      const retry = await supabase.auth.getUser()
+      if (retry.data.user?.id) return retry.data.user.id
     }
     return null
   }
