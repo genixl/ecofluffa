@@ -24,6 +24,7 @@ CREATE TABLE public.providers (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   is_listed boolean NOT NULL DEFAULT false,
   approval_status text NOT NULL DEFAULT 'pending'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'disabled'::text])),
+  photo_url text,
   CONSTRAINT providers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.services (

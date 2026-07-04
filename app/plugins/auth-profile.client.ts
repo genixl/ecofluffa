@@ -13,13 +13,16 @@ export default defineNuxtPlugin(async () => {
     await fetchProfile(userId)
   }
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session?.user?.id) {
-    await syncForUser(session.user.id)
+  const result = await supabase.auth.getUser()
+  const authUser = result.data.user
+  if (authUser?.id) {
+    await syncForUser(authUser.id)
   }
 
   supabase.auth.onAuthStateChange(async (_event, session) => {
-    await syncForUser(session?.user?.id)
+    const validatedResult = await supabase.auth.getUser()
+    const validatedUser = validatedResult.data.user
+    await syncForUser(validatedUser?.id)
   })
 
   watch(

@@ -27,8 +27,15 @@
 
     <!-- Provider / Customer -->
     <div class="font-semibold text-sm mb-1 truncate" style="color: var(--text-primary);">
-      <div class="flex items-center gap-1">
-        <Icon :name="role === 'customer' ? 'mdi:store' : 'mdi:account'" size="16" />
+      <div class="flex items-center gap-2">
+        <ProviderAvatar
+          v-if="role === 'customer' && providerPhotoUrl"
+          :photoUrl="providerPhotoUrl"
+          :name="provider"
+          :size="24"
+          rounded="0.375rem"
+        />
+        <Icon v-else :name="role === 'customer' ? 'mdi:store' : 'mdi:account'" size="16" />
         <span>{{ role === 'customer' ? provider : (customerName || 'Customer') }}</span>
       </div>
     </div>
@@ -69,6 +76,7 @@ defineProps<{
   pickupAddress?: string
   customerName?: string
   urgency?: 'today' | 'overdue' | null
+  providerPhotoUrl?: string | null
 }>()
 
 const hovered = ref(false)

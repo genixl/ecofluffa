@@ -28,7 +28,7 @@
               label="Browse Providers"
               variant="secondary"
               type="button"
-              @click="$router.push('/customer/browse')"
+              @click="$router.push('/browse')"
             />
           </div>
         </div>
@@ -83,24 +83,19 @@
     <!-- Featured Providers Section -->
     <section class="max-w-7xl mx-auto px-6 py-16">
       <SectionHeader title="Featured Providers" subtitle="Popular choices in your area" />
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="featuredProviders.length === 0" class="text-center py-12">
+        <div class="text-muted">Loading providers...</div>
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ProviderCard
-          name="Ocean Breeze Laundry"
-          location="Riverside District"
-          :rating="4.6"
-          :services="['Wash & Fold', 'Ironing', 'Dry Cleaning']"
-        />
-        <ProviderCard
-          name="Sunshine Suds Co."
-          location="Central Business Area"
-          :rating="4.4"
-          :services="['Wash & Fold', 'Stain Removal', 'Blanket Cleaning']"
-        />
-        <ProviderCard
-          name="FreshWave Laundry"
-          location="North End"
-          :rating="4.7"
-          :services="['Wash & Fold', 'Delicate Care', 'Curtain Cleaning']"
+          v-for="p in featuredProviders"
+          :key="p.id"
+          :name="p.name"
+          :location="p.location"
+          :rating="p.rating"
+          :services="getProviderServices(p.id).map(ps => ps.service?.title ?? '')"
+          :to="`/providers/${p.id}`"
+          :photoUrl="p.photo_url"
         />
       </div>
     </section>
@@ -137,10 +132,22 @@
 
 <script setup lang="ts">
 const router = useRouter();
+const { providers, providerServices, refreshCatalog } = useServices();
+
+onMounted(() => {
+  refreshCatalog();
+});
 
 const goToOrderNew = () => {
   router.push("/order/new");
 };
+
+const featuredProviders = computed(() => {
+  return providers.value.slice(0, 3);
+});
+
+const getProviderServices = (providerId: string) => 
+  providerServices.value.filter(ps => ps.provider_id === providerId);
 
 const heroFeatures = [
   { title: "Book in minutes", desc: "Quick, hassle-free booking process" },

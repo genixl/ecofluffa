@@ -20,10 +20,12 @@
           style="background-color: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div class="flex gap-5 items-start">
-              <div class="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
-                style="background-color: var(--brand-blue-light);">
-                <Icon name="mdi:store" size="32" style="color: var(--brand-blue);" />
-              </div>
+              <ProviderAvatar
+                :photoUrl="provider.photo_url"
+                :name="provider.name"
+                :size="256"
+                rounded="1rem"
+              />
               <div>
                 <h1 class="text-3xl font-bold mb-1" style="color: var(--brand-blue);">{{ provider.name }}</h1>
                 <div class="flex items-center gap-2 text-sm mb-3" style="color: var(--text-muted);">

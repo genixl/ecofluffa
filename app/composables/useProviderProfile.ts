@@ -164,6 +164,7 @@ export function useProviderProfile() {
     location?: string
     phone?: string
     pickup_fee?: string
+    photo_url?: string | null
   }) => {
     if (!profile.value?.provider_id) return { error: 'Provider account not linked.' }
     const { data, error } = await supabase

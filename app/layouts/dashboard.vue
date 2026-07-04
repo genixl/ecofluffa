@@ -212,10 +212,11 @@ onMounted(async () => {
     await fetchProfile(id)
     return
   }
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session?.user?.id) {
-    authUserId.value = session.user.id
-    await fetchProfile(session.user.id)
+  const result = await supabase.auth.getUser()
+  const authUser = result.data.user
+  if (authUser?.id) {
+    authUserId.value = authUser.id
+    await fetchProfile(authUser.id)
   }
   if (route.path.startsWith('/provider')) {
     await fetchMyProvider()

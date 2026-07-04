@@ -34,6 +34,13 @@
 
       <section class="bg-surface border border-theme rounded-xl p-6 mb-6 shadow-theme-sm">
         <SectionHeader title="Business profile" subtitle="Public listing customers will browse" />
+        <!-- Profile photo (optional) -->
+        <div class="mb-5">
+          <ProviderPhotoUpload
+            v-model="photoUrl"
+            :providerName="businessName || 'Provider'"
+          />
+        </div>
         <InputField label="Business name" type="text" v-model="businessName" placeholder="Ocean Breeze Laundry" />
         <InputField label="Location / area" type="text" v-model="location" placeholder="Riverside, Nairobi" />
         <InputField label="Business phone" type="tel" v-model="businessPhone" placeholder="+254 7XX XXX XXX" />
@@ -222,6 +229,7 @@ const businessName = ref('')
 const location = ref('')
 const businessPhone = ref('')
 const pickupFee = ref('Free pickup')
+const photoUrl = ref<string | null>(null)
 
 const showForm = ref(false)
 const editingId = ref<string | null>(null)
@@ -240,6 +248,7 @@ watch(provider, (p) => {
   location.value = p.location
   businessPhone.value = p.phone
   pickupFee.value = p.pickup_fee
+  photoUrl.value = p.photo_url ?? null
 }, { immediate: true })
 
 const hasContact = computed(

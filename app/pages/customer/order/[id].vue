@@ -11,16 +11,25 @@
 
     <template v-else-if="order">
       <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-        <div>
-          <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
-          <div class="text-brand-charcoal mt-2">
-            Provider: <span class="font-semibold">{{ order.provider?.name }}</span>
-          </div>
-          <div class="text-brand-charcoal text-sm mt-1">
-            Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}
-          </div>
-          <div class="text-brand-orange font-semibold text-sm mt-2">
-            Estimated total: {{ order.total_estimate }}
+        <div class="flex items-start gap-4">
+          <ProviderAvatar
+            v-if="order.provider"
+            :photoUrl="order.provider.photo_url"
+            :name="order.provider.name"
+            :size="64"
+            rounded="1rem"
+          />
+          <div>
+            <div class="text-brand-blue font-bold text-3xl">Order {{ order.id }}</div>
+            <div class="text-brand-charcoal mt-2">
+              Provider: <span class="font-semibold">{{ order.provider?.name }}</span>
+            </div>
+            <div class="text-brand-charcoal text-sm mt-1">
+              Pickup: {{ order.pickup_date }} at {{ order.pickup_time }}
+            </div>
+            <div class="text-brand-orange font-semibold text-sm mt-2">
+              Estimated total: {{ order.total_estimate }}
+            </div>
           </div>
         </div>
         <OrderStatusBadge :status="order.status" />

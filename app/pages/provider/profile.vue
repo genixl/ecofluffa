@@ -12,6 +12,13 @@
       class="bg-surface border border-theme rounded-xl p-6 shadow-theme-sm"
       @submit.prevent="save"
     >
+      <!-- Profile photo (optional) -->
+      <div class="mb-6">
+        <ProviderPhotoUpload
+          v-model="photoUrl"
+          :providerName="businessName || 'Provider'"
+        />
+      </div>
       <InputField
         label="Business Name"
         type="text"
@@ -118,6 +125,7 @@ const businessName = ref('')
 const location = ref('')
 const contactPhone = ref('')
 const pickupFee = ref('Free pickup')
+const photoUrl = ref<string | null>(null)
 const pageLoading = ref(true)
 const saving = ref(false)
 const saved = ref(false)
@@ -131,6 +139,7 @@ watch(
     location.value = p.location
     contactPhone.value = p.phone
     pickupFee.value = p.pickup_fee
+    photoUrl.value = p.photo_url ?? null
   },
   { immediate: true }
 )

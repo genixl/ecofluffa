@@ -17,9 +17,12 @@
       <template v-else>
         <div v-if="selectedProvider" class="rounded-2xl p-5 mb-8 flex items-center gap-4"
           style="background-color: var(--brand-blue-light); border: 1px solid var(--brand-blue);">
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color: var(--brand-blue);">
-            <Icon name="mdi:store" size="22" style="color: #fff;" />
-          </div>
+          <ProviderAvatar
+            :photoUrl="selectedProvider.photo_url"
+            :name="selectedProvider.name"
+            :size="48"
+            rounded="0.75rem"
+          />
           <div class="flex-1 min-w-0">
             <div class="font-bold" style="color: var(--brand-blue);">{{ selectedProvider.name }}</div>
             <div class="text-sm" style="color: var(--text-muted);">{{ selectedProvider.location }} · {{ selectedProvider.pickup_fee }}</div>

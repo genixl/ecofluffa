@@ -5,8 +5,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser()
   let userId = user.value?.id
   if (!userId) {
-    const { data: { session } } = await useSupabaseClient().auth.getSession()
-    userId = session?.user?.id
+    const result = await useSupabaseClient().auth.getUser()
+    const authUser = result.data.user
+    userId = authUser?.id
   }
   if (!userId) return
 

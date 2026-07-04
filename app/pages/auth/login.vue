@@ -63,8 +63,14 @@ const submit = async () => {
       return
     }
 
-    const path = result.redirectPath ?? getRedirectPath()
-    await navigateTo(path, { replace: true })
+    // Check if there's a redirect parameter from the URL
+    const redirectParam = route.query.redirect
+    if (typeof redirectParam === 'string' && redirectParam) {
+      await navigateTo(redirectParam, { replace: true })
+    } else {
+      const path = result.redirectPath ?? getRedirectPath()
+      await navigateTo(path, { replace: true })
+    }
   } catch (e) {
     console.error('Login failed:', e)
     error.value = 'Something went wrong. Please try again.'
