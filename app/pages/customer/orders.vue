@@ -26,6 +26,7 @@
         role="customer"
         :pickup-address="o.pickup_address"
         :to="`/customer/order/${o.id}`"
+        :providerPhotoUrl="o.provider?.photo_url"
       />
     </div>
   </div>

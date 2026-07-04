@@ -6,17 +6,19 @@
     @mouseleave="hovered = false"
     :style="hovered ? `background-color: var(--bg-surface); box-shadow: var(--shadow-lg); transform: translateY(-3px); border-color: var(--brand-blue);` : ''"
   >
-    <!-- Top accent bar -->
-<div class="h-1.5 w-full" style="background: var(--brand-blue);"></div>
+    <!-- Avatar strip -->
+    <div class="h-1.5 w-full" style="background: var(--brand-blue);"></div>
 
     <div class="p-5">
       <!-- Header row -->
       <div class="flex items-start justify-between gap-3 mb-3">
-        <div class="flex-1 min-w-0">
-          <h3 class="font-bold text-base leading-tight truncate" style="color: var(--text-primary);">{{ name }}</h3>
-          <div class="flex items-center gap-1 mt-1">
-            <span class="text-xs" style="color: var(--text-muted);"></span>
-            <span class="text-xs" style="color: var(--text-muted);">{{ location }}</span>
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <ProviderAvatar :photoUrl="photoUrl" :name="name" :size="44" rounded="0.75rem" />
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-base leading-tight truncate" style="color: var(--text-primary);">{{ name }}</h3>
+            <div class="flex items-center gap-1 mt-1">
+              <span class="text-xs" style="color: var(--text-muted);">{{ location }}</span>
+            </div>
           </div>
         </div>
         <!-- Rating badge -->
@@ -47,7 +49,7 @@
       <NuxtLink
         :to="to || '/browse'"
         class="block w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
-        style="background: linear-gradient(135deg, var(--brand-blue), #1a6bb5);"
+        style="background: var(--brand-orange);"
       >
         View Provider
       </NuxtLink>
@@ -62,6 +64,7 @@ defineProps<{
   rating: number
   services: string[]
   to?: string
+  photoUrl?: string | null
 }>()
 
 const hovered = ref(false)

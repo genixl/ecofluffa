@@ -4,9 +4,12 @@
     :class="{ 'ring-2 ring-brand-blue border-brand-blue': highlighted }"
   >
     <div class="flex items-start justify-between gap-3">
-      <div>
-        <div class="text-brand-blue font-bold text-lg">{{ provider.name }}</div>
-        <div class="text-gray-500 text-sm mt-0.5">{{ provider.location }}</div>
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <ProviderAvatar :photoUrl="provider.photo_url" :name="provider.name" :size="44" rounded="0.75rem" />
+        <div class="min-w-0">
+          <div class="text-brand-blue font-bold text-lg truncate">{{ provider.name }}</div>
+          <div class="text-gray-500 text-sm mt-0.5">{{ provider.location }}</div>
+        </div>
       </div>
       <div class="bg-brand-orange text-white text-sm font-bold px-2.5 py-1.5 rounded-lg shrink-0">
         {{ provider.rating }}

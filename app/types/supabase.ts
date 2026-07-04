@@ -27,6 +27,7 @@ export interface Provider {
   phone: string
   is_listed: boolean
   approval_status?: ApprovalStatus
+  photo_url?: string | null
   created_at: string
 }
 

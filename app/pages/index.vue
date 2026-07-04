@@ -95,6 +95,7 @@
           :rating="p.rating"
           :services="getProviderServices(p.id).map(ps => ps.service?.title ?? '')"
           :to="`/providers/${p.id}`"
+          :photoUrl="p.photo_url"
         />
       </div>
     </section>

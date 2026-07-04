@@ -39,3 +39,5 @@ add-services-rls.sql
 alter-services-id-to-uuid.sql
 add-services-provider-fk.sql
 provider-rls-policies.sql
+db.sql
+add-provider-photo.sql
