@@ -31,10 +31,6 @@
         </div>
       </div>
 
-      <!-- Star display -->
-      <div class="flex gap-0.5 mb-4">
-      </div>
-
       <!-- Services -->
       <div class="flex flex-wrap gap-2 mb-4">
         <span

@@ -58,8 +58,8 @@ export function useCloudinaryUpload() {
 
       const data = await res.json()
       return { url: data.secure_url as string, error: null }
-    } catch (err: any) {
-      return { url: null, error: err?.message ?? 'Network error during upload.' }
+    } catch (err: unknown) {
+      return { url: null, error: err instanceof Error ? err.message : 'Network error during upload.' }
     } finally {
       uploading.value = false
     }

@@ -7,7 +7,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/icon', '@nuxtjs/supabase'],
   css: ["~/assets/css/main.css"],
-  
   runtimeConfig: {
     public: {
       // These will be overridden by NUXT_PUBLIC_SUPABASE_URL and NUXT_PUBLIC_SUPABASE_KEY env vars
@@ -27,5 +26,6 @@ export default defineNuxtConfig({
     url: process.env.NUXT_PUBLIC_SUPABASE_URL,
     key: process.env.NUXT_PUBLIC_SUPABASE_KEY,
     redirect: false,
+    types: false,
   },
 })

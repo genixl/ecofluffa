@@ -25,19 +25,5 @@ logs
 
 ##DB FILES
 
-fix-admin-orders.sql
-fix-profiles-rls.sql
-fix-provider-setup.sql
-origin.sql
-profile-order-access.sql
-provider-listing.sql
-schema.sql
-fix-contact-rls.sql
-add-customer-addresses.sql
-fix-provider-rls.sql
-add-services-rls.sql
-alter-services-id-to-uuid.sql
-add-services-provider-fk.sql
-provider-rls-policies.sql
+
 db.sql
-add-provider-photo.sql

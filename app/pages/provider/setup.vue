@@ -297,11 +297,8 @@ const ensureProviderExists = async () => {
 }
 
 onMounted(async () => {
-  console.log('Setup page mounted, profile:', profile.value)
   const providerExists = await ensureProviderExists()
-  console.log('ensureProviderExists result:', providerExists, 'provider_id:', profile.value?.provider_id)
   await fetchMyProvider()
-  console.log('fetchMyProvider completed, catalogServices count:', catalogServices.value.length)
   pageLoading.value = false
 })
 
@@ -424,6 +421,8 @@ const publish = async () => {
     return
   }
   await fetchMyProvider()
+  // Navigate to dashboard after successful submission
+  await navigateTo('/provider')
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })

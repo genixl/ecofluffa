@@ -131,8 +131,8 @@
 </template>
 
 <script setup lang="ts">
-const router = useRouter();
-const { providers, providerServices, refreshCatalog } = useServices();
+const router = useRouter()
+const { providers, providerServices, refreshCatalog } = useServices()
 
 onMounted(() => {
   refreshCatalog();
@@ -146,8 +146,8 @@ const featuredProviders = computed(() => {
   return providers.value.slice(0, 3);
 });
 
-const getProviderServices = (providerId: string) => 
-  providerServices.value.filter(ps => ps.provider_id === providerId);
+const getProviderServices = (providerId: string) =>
+  providerServices.value.filter(ps => ps.provider_id === providerId)
 
 const heroFeatures = [
   { title: "Book in minutes", desc: "Quick, hassle-free booking process" },
