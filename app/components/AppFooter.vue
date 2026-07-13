@@ -29,19 +29,13 @@
         </div>
 
         <!-- Company -->
-        
       </div>
 
       <!-- Bottom bar -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style="border-top: 1px solid var(--border-color);">
         <p class="text-xs" style="color: var(--text-faint);">
           © {{ new Date().getFullYear() }} EcoFluffa. All rights reserved.
-        </p>
-        <div class="flex gap-6">
-          <span class="text-xs cursor-pointer hover:opacity-80" style="color: var(--text-faint);">Privacy Policy</span>
-          <span class="text-xs cursor-pointer hover:opacity-80" style="color: var(--text-faint);">Terms of Service</span>
-          <span class="text-xs cursor-pointer hover:opacity-80" style="color: var(--text-faint);">Cookie Policy</span>
-        </div>
+        </p> 
       </div>
     </div>
   </footer>

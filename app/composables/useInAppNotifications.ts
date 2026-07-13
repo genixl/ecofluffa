@@ -1,5 +1,3 @@
-
-
 export interface InAppNotification {
   id: string
   type: 'order_update' | 'new_message'

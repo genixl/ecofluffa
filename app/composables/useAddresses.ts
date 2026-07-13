@@ -73,7 +73,6 @@ export function useAddresses() {
     await updateAddress(id, { is_default: true })
   }
 
-
   const clearDefault = async () => {
     if (!profile.value?.id) return
     await supabase

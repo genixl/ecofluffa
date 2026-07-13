@@ -1,4 +1,3 @@
-
 export function useTheme() {
   const isDark = useState<boolean>('theme-dark', () => false)
 

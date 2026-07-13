@@ -109,12 +109,6 @@ export function useAdminPlatform() {
       supabase.rpc('count_customers'),
     ])
 
-    console.log('Stats query results:', {
-      totalProviders: totalProviders,
-      listedProviders: listedProviders,
-      totalCustomers: totalCustomers,
-    })
-
     stats.value = {
       orders: {
         today: todayCount,
@@ -224,7 +218,6 @@ export function useAdminPlatform() {
       return
     }
 
-    console.log('Loaded customers:', data?.length || 0)
     customers.value = data as Profile[]
   }
 

@@ -24,7 +24,6 @@ export function useProviderProfile() {
 
   const fetchMyProvider = async () => {
     if (!profile.value?.provider_id) {
-      console.log('fetchMyProvider: No provider_id in profile')
       return
     }
     loading.value = true
@@ -55,16 +54,13 @@ export function useProviderProfile() {
 
     if (prvRes.error) console.error('Provider fetch error:', prvRes.error)
     if (!prvRes.error && prvRes.data) provider.value = prvRes.data as Provider
-    
+
     if (svcRes.error) console.error('Provider services fetch error:', svcRes.error)
     if (!svcRes.error && svcRes.data) myServices.value = svcRes.data as ProviderService[]
-    
+
     if (catalogRes.error) console.error('Catalog services fetch error:', catalogRes.error)
     if (!catalogRes.error && catalogRes.data) {
       catalogServices.value = catalogRes.data as Service[]
-      console.log('Catalog services loaded:', catalogServices.value.length)
-    } else {
-      console.log('Catalog services empty or error:', catalogRes.error?.message || 'No data')
     }
 
     if (ratingsRes.error) console.error('Ratings fetch error:', ratingsRes.error)

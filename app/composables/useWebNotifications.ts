@@ -41,7 +41,6 @@ export function useWebNotifications() {
       silent: options?.silent ?? false,
     })
 
-
     notif.onclick = () => {
       window.focus()
       notif.close()

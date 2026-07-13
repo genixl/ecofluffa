@@ -323,7 +323,7 @@ export function usePlatform() {
       .single()
     if (error) return false
     if (data) ratings.value.push(data as Rating)
-    
+
     // Calculate and update provider's average rating
     const { data: allRatings } = await supabase
       .from('ratings')
@@ -472,7 +472,6 @@ export function usePlatform() {
         // swap the temp out for the real DB record
         messages.value[tempIdx] = real
       } else {
-
         messages.value.push(real)
       }
     }

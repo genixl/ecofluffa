@@ -119,8 +119,8 @@ export function useServices() {
       popular: serviceData.popular ?? false,
       provider_id: serviceData.provider_id ?? null,
       approval_status: isCustom ? 'pending' : 'approved',
-    } as any
-    const { data, error } = await supabase.from('services').insert(insertData).select('id').single() as any
+    }
+    const { data, error } = await supabase.from('services').insert(insertData).select('id').single()
 
     if (!error && data) {
       await refreshCatalog()

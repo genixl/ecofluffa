@@ -66,6 +66,8 @@ CREATE TABLE public.orders (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   customer_phone text NOT NULL DEFAULT ''::text,
   customer_name text NOT NULL DEFAULT ''::text,
+  delivery_confirmed boolean NOT NULL DEFAULT false,
+  delivery_confirmed_at timestamp with time zone,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.profiles(id),
   CONSTRAINT orders_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id)
