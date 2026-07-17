@@ -62,7 +62,7 @@
 
           <!-- Skewed / parallelogram image -->
           <div class="skewed-image-wrap">
-            <img src="/hero-1.jpg" alt="How it works process" />
+            <img src="/hero-2.png" alt="How it works process" />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -121,7 +121,7 @@
 
           <!-- Skewed / parallelogram image -->
           <div class="skewed-image-wrap">
-            <img src="/hero-bg.jpeg" alt="Why EcoFluffa benefits" />
+            <img src="/hero-1.jpg" alt="Why EcoFluffa benefits" />
           </div>
         </div>
       </div>
