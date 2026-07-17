@@ -11,7 +11,7 @@
         <h1 class="text-5xl font-bold mb-6" style="color: var(--brand-blue);">About EcoFluffa</h1>
         <p class="text-lg leading-relaxed max-w-2xl mx-auto" style="color: var(--text-muted);">
           We believe clean laundry shouldn't be a hassle. EcoFluffa connects you with trusted local
-          providers who handle the work while you focus on what matters the most.
+          providers who handle the work while you focus on what matters most.
         </p>
       </div>
 
