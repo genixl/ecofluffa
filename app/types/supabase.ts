@@ -41,7 +41,7 @@ export interface Service {
   description: string
   turnaround: string
   popular: boolean
-  provider_id: string | null // set for provider-owned custom services only
+  provider_id: string | null
   approval_status?: ServiceApprovalStatus
   created_at: string
 }
