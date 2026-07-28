@@ -274,6 +274,7 @@ const navItems = computed<NavItem[]>(() => {
           { to: '/customer/browse', label: 'Browse Providers', icon: 'mdi:store-search' },
           { to: '/customer/orders', label: 'My Orders', icon: 'mdi:package' },
           { to: '/customer/profile', label: 'Profile', icon: 'mdi:account' },
+          { to: '/customer/report', label: 'Reports', icon: 'mdi:chart-bar' },
         ]
       : dashboardRole.value === 'provider'
         ? needsOnboarding.value
@@ -283,6 +284,7 @@ const navItems = computed<NavItem[]>(() => {
               { to: '/provider/orders', label: 'Orders', icon: 'mdi:inbox' },
               { to: '/provider/services', label: 'My Services', icon: 'mdi:washing-machine' },
               { to: '/provider/profile', label: 'Business Profile', icon: 'mdi:store' },
+              { to: '/provider/report', label: 'Reports', icon: 'mdi:chart-line' },
             ]
         : dashboardRole.value === 'admin'
           ? [

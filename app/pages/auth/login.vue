@@ -7,6 +7,15 @@
       <InputField label="Email" type="email" placeholder="you@example.com" v-model="email" />
       <InputField label="Password" type="password" placeholder="Your password" v-model="password" />
 
+      <div class="text-right -mt-1">
+        <NuxtLink
+          to="/auth/forgot-password"
+          class="text-xs text-brand-orange hover:text-brand-blue font-medium transition-colors"
+        >
+          Forgot password?
+        </NuxtLink>
+      </div>
+
       <div v-if="info" class="text-brand-blue text-sm font-medium">{{ info }}</div>
       <div v-if="error" class="text-red-500 text-sm font-medium">{{ error }}</div>
 

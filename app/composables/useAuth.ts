@@ -300,6 +300,37 @@ export function useAuth() {
     usePlatform().resetPlatformData()
   }
 
+  /**
+   * Sends a password-reset email to the given address.
+   * Supabase will include a link that redirects to /auth/reset-password.
+   */
+  const resetPassword = async (email: string): Promise<{ error: string | null }> => {
+    loading.value = true
+    try {
+      const redirectTo = `${window.location.origin}/auth/reset-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+      if (error) return { error: error.message }
+      return { error: null }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Updates the authenticated user's password.
+   * Call this after the user has arrived via the reset-password link.
+   */
+  const updatePassword = async (newPassword: string): Promise<{ error: string | null }> => {
+    loading.value = true
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) return { error: error.message }
+      return { error: null }
+    } finally {
+      loading.value = false
+    }
+  }
+
   const role = computed<UserRole | null>(() => {
     if (!profile.value) return null
     const uid = resolveUserId()
@@ -339,5 +370,7 @@ export function useAuth() {
     getRedirectPath,
     waitForAuthReady,
     authUserId,
+    resetPassword,
+    updatePassword,
   }
 }

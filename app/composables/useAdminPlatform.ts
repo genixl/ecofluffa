@@ -25,6 +25,13 @@ export interface ProviderPerformanceRow {
   completed: number
 }
 
+export interface ProviderWithDeletionInfo extends Provider {
+  service_count?: number
+  last_activity?: string | null
+  eligible_for_deletion?: boolean
+  deletion_reason?: string
+}
+
 export interface AdminReportsData {
   monthlyActiveUsers: number
   totalDelivered: number
@@ -51,7 +58,7 @@ export function useAdminPlatform() {
   const supabase = useSupabaseClient()
 
   const stats = useState<AdminPlatformStats | null>('admin-platform-stats', () => null)
-  const providers = useState<Provider[]>('admin-providers', () => [])
+  const providers = useState<ProviderWithDeletionInfo[]>('admin-providers', () => [])
   const customers = useState<Profile[]>('admin-customers', () => [])
   const reports = useState<AdminReportsData | null>('admin-reports', () => null)
   const loaded = useState<boolean>('admin-platform-loaded', () => false)
@@ -137,7 +144,49 @@ export function useAdminPlatform() {
       providers.value = []
       return
     }
-    providers.value = data as Provider[]
+    
+    // Enrich providers with deletion eligibility info
+    const providersWithInfo = await Promise.all(
+      (data as Provider[]).map(async (p) => {
+        // Count services for this provider
+        const { count: serviceCount } = await supabase
+          .from('provider_services')
+          .select('*', { count: 'exact', head: true })
+          .eq('provider_id', p.id)
+        
+        // Get last activity (last order date)
+        const { data: lastOrder } = await supabase
+          .from('orders')
+          .select('created_at')
+          .eq('provider_id', p.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        
+        const lastActivity = (lastOrder && lastOrder.length > 0) ? (lastOrder as any)[0]?.created_at || null : null
+        const hasNoServices = (serviceCount ?? 0) === 0
+        
+        // Check if inactive for more than 90 days
+        const ninetyDaysAgo = daysAgoIso(90)
+        const isInactive = lastActivity ? new Date(lastActivity) < new Date(ninetyDaysAgo) : false
+        
+        const eligibleForDeletion = hasNoServices || isInactive
+        const deletionReason = hasNoServices 
+          ? 'No services offered' 
+          : isInactive 
+            ? 'Inactive for 90+ days' 
+            : ''
+        
+        return {
+          ...p,
+          service_count: serviceCount ?? 0,
+          last_activity: lastActivity,
+          eligible_for_deletion: eligibleForDeletion,
+          deletion_reason: deletionReason,
+        } as ProviderWithDeletionInfo
+      })
+    )
+    
+    providers.value = providersWithInfo
   }
 
   const approveProvider = async (providerId: string) => {
@@ -165,6 +214,26 @@ export function useAdminPlatform() {
       .from('providers')
       .update({ approval_status: 'approved', is_listed: true })
       .eq('id', providerId)
+    if (error) return { error: error.message }
+    await loadProviders()
+    return { error: null }
+  }
+
+  const deleteProvider = async (providerId: string) => {
+    // Delete provider services first
+    const { error: servicesError } = await supabase
+      .from('provider_services')
+      .delete()
+      .eq('provider_id', providerId)
+    
+    if (servicesError) return { error: servicesError.message }
+    
+    // Delete the provider
+    const { error } = await supabase
+      .from('providers')
+      .delete()
+      .eq('id', providerId)
+    
     if (error) return { error: error.message }
     await loadProviders()
     return { error: null }
@@ -301,6 +370,7 @@ export function useAdminPlatform() {
     approveProvider,
     disableProvider,
     restoreProvider,
+    deleteProvider,
     loadPendingCustomServices,
     approveCustomService,
     rejectCustomService,
