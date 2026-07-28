@@ -16,6 +16,9 @@
             <th class="p-4 text-xs font-semibold text-muted uppercase">Location</th>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Rating</th>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Account Status</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Services</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Last Activity</th>
+            <th class="p-4 text-xs font-semibold text-muted uppercase">Deletion Status</th>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Joined</th>
             <th class="p-4 text-xs font-semibold text-muted uppercase">Actions</th>
           </tr>
@@ -31,6 +34,22 @@
                 :class="statusClass(p.approval_status)"
               >
                 {{ statusLabel(p.approval_status) }}
+              </span>
+            </td>
+            <td class="p-4 text-sm text-muted">{{ p.service_count ?? 0 }}</td>
+            <td class="p-4 text-sm text-muted">{{ p.last_activity ? formatDate(p.last_activity) : 'Never' }}</td>
+            <td class="p-4 text-sm">
+              <span
+                v-if="p.eligible_for_deletion"
+                class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700"
+              >
+                {{ p.deletion_reason }}
+              </span>
+              <span
+                v-else
+                class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700"
+              >
+                Active
               </span>
             </td>
             <td class="p-4 text-sm text-muted">{{ formatDate(p.created_at) }}</td>
@@ -63,6 +82,15 @@
                   :disabled="!!actingId"
                   @click="handleRestore(p.id)"
                 />
+                <AppButton
+                  v-if="p.eligible_for_deletion"
+                  label="Delete"
+                  variant="danger"
+                  type="button"
+                  :loading="actingId === p.id"
+                  :disabled="!!actingId"
+                  @click="handleDelete(p.id)"
+                />
               </div>
             </td>
           </tr>
@@ -75,7 +103,7 @@
 <script setup lang="ts">
 import type { ApprovalStatus } from '~/types/supabase'
 
-const { providers, loadProviders, approveProvider, disableProvider, restoreProvider } = useAdminPlatform()
+const { providers, loadProviders, approveProvider, disableProvider, restoreProvider, deleteProvider } = useAdminPlatform()
 const { success, error: toastError } = useToast()
 
 const loading = ref(true)
@@ -123,6 +151,17 @@ const handleRestore = async (id: string) => {
   actingId.value = null
   if (result.error) toastError(result.error)
   else success('Provider restored and listed again.')
+}
+
+const handleDelete = async (id: string) => {
+  if (!confirm('Are you sure you want to permanently delete this provider? This action cannot be undone.')) {
+    return
+  }
+  actingId.value = id
+  const result = await deleteProvider(id)
+  actingId.value = null
+  if (result.error) toastError(result.error)
+  else success('Provider permanently deleted from the system.')
 }
 
 definePageMeta({ layout: 'dashboard', middleware: ['auth', 'role'] })
